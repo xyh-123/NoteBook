@@ -5,6 +5,8 @@ Pytorch
 
 [PyTorch中文文档](https://pytorch-cn.readthedocs.io/zh/latest/)
 
+
+
 torch.Tensor
 ---
 
@@ -406,6 +408,22 @@ tensor([[[1, 0, 0],
 > import torch.nn.init as init
 >
 > nn.init负责网络参数的初始化
+
+### nn.Linear()
+
+> 用于设置网络中的**全连接层的**
+
+![img](assess/817161-20200723154555102-547248799.png)
+
+
+
+- `in_features`指的是输入的二维张量的大小，即输入的`[batch_size, size]`中的size。
+- `out_features`指的是输出的二维张量的大小，即输出的二维张量的形状为`[batch_size，output_size]`，当然，它也代表了该全连接层的神经元个数。
+- 从输入输出的张量的shape角度来理解，相当于一个输入为`[batch_size, in_features]`的张量变换成了`[batch_size, out_features]`的输出张量。
+
+
+
+
 
 torch.optim(optim)
 ---
@@ -981,7 +999,99 @@ memory_map如果为filepath_or_buffer提供了文件路径，则将文件对象�
 
 low_memory 默认为True 在块内部处理文件，导致分析时内存使用量降低，但可能数据类型混乱。要确保没有混合类型设置为False，或者使用dtype参数指定类型。请注意，不管怎样，整个文件都读入单个DataFrame中，请使用chunksize或iterator参数以块形式返回数据。 （仅在C语法分析器中有效）
 
+dropna
+---
 
+> DataFrme.dropna(axis=0,how=’any’,thresh=None,subset=None,inplace=False)
+
+参数：
+axis: 默认axis=0。0为按行删除,1为按列删除
+how: 默认 ‘any’。 ‘any’指带缺失值的所有行/列;'all’指清除一整行/列都是缺失值的行/列
+thresh: int,保留含有int个非nan值的行
+subset: 删除特定列中包含缺失值的行或列
+inplace: 默认False，即筛选后的数据存为副本,True表示直接在原数据上更改
+
+```python
+df=df.dropna()#删除所有包含NaN的行，相当于参数全部默认
+#等价于  df=df.dropna(axis=0,how=‘any’,thresh=None,subset=None,inplace=False)
+```
+
+set_index()
+---
+
+[set_index( )与reset_index( )](https://zhuanlan.zhihu.com/p/110819220?from_voters_page=true)
+
+> DataFrame.set_index(keys, drop=True, append=False, inplace=False, verify_integrity=False)
+
+参数解释：
+
+**keys**：列标签或列标签/数组列表，需要设置为索引的列
+
+**drop：**默认为True，**删除用作新索引的列**
+
+**append：**是否将列附加到现有索引，默认为**False**。为True时则新的索引列与原来的索引列都会保存下来
+
+**inplace**：输入布尔值，**表示当前操作是否对原数据生效**，默认为**False**。
+
+**verify_integrity**：检查新索引的副本。否则，请将检查推迟到必要时进行。将其设置为false将提高该方法的性能，默认为**false。**
+
+reset_index
+---
+
+> DataFrame.reset_index(level=None, drop=False, inplace=False, col_level=0, col_fill='')
+
+**level：数值类型可以为：int、str、tuple或list，默认无**，仅从索引中删除给定级别。默认情况下移除所有级别。控制了具体要还原的那个等级的索引 。
+
+**drop：**当指定**drop=False**时，则索引列会被还原为普通列；否则，经设置后的新索引值被会丢弃。默认为**False**。
+
+**inplace**：输入布尔值，表示当前操作是否对原数据生效，默认为**False**。
+
+**col_level：**数值类型**为int或str**，默认值为0，如果列有多个级别，则确定将标签插入到哪个级别。默认情况下，它将插入到第一级。
+
+**col_fill：**对象，默认‘’，如果列有多个级别，则确定其他级别的命名方式。如果没有，则重复索引名。
+
+### 对使用过set_index()函数的数据表进行reset
+
+![img](assess/v2-ec2cc22b4bcf825e7e640b2c1580a59d_1440w.jpg)
+
+```python
+df_new = df.set_index('Country',drop=True, append=False, inplace=False, verify_integrity=False)
+df_new
+```
+
+![img](assess/v2-374d42d3e14370a734ef8a348412ae64_1440w.jpg)
+
+```python
+df_new01 = df_new.reset_index(drop=False)#drop=False索引的列被还原成原来的样子
+df_new01
+```
+
+![img](assess/v2-8b908db84254da2d72f51a78c3ea33ed_1440w.jpg)
+
+```python
+df_new02 = df_new.reset_index(drop=True)#drop=True会将原来的索引列删除
+df_new02
+```
+
+![img](assess/v2-7d9f39f1be4e28a932b2a55985613256_1440w.jpg)
+
+### 对原来的数据表进行reset
+
+![img](assess/v2-790d3d01727023128e8c8ee3cb266142_1440w.jpg)
+
+```python
+df_new03 = df.reset_index(drop=False)#新增索引列，原来的索引列不会被删除
+df_new03
+```
+
+![img](assess/v2-c3d873c289d22dc96b2a5765ed56ca1a_1440w.jpg)
+
+```python
+df_new04 = df.reset_index(drop=True)#原来的索引列不会被删除
+df_new04
+```
+
+![img](assess/v2-f6c3dc5b3f0f8cd6501e789efed1527f_1440w.jpg)
 
 argparse
 ===
@@ -1037,8 +1147,89 @@ ArgumentParser.add_argument(name or flags...[, action][, nargs][, const][, defau
 - metavar - 在 usage 说明中的参数名称，对于必选参数默认就是参数名称，对于可选参数默认是全大写的参数名称.
 - dest - 解析后的参数名称，默认情况下，对于可选参数选取最长的名称，中划线转换为下划线.
 
+tqdm
+===
+
+tqdm可以在长循环中添加一个进度提示信息，用户只需要封装任意的迭代器 tqdm(iterator)，是一个快速、扩展性强的进度条工具库。
+
+```python
+import time
+from tqdm import *
+for i in tqdm(range(1000)):
+    time.sleep(.01)    #进度条每0.1s前进一次，总时间为1000*0.1=100s
+```
+
+![img](assess/53cde83d3ed5b22a59c106e082c204b5.gif)
+
+
+
 Python方法
 ===
+
+*args和**kwargs
+---
+
+args 是 arguments 的缩写，表示位置参数；kwargs 是 keyword arguments 的缩写，表示关键字参数。这其实就是 Python 中可变参数的两种形式，并且  **\*args 必须放在 \*\*kwargs 的前面**，因为位置参数在关键字参数的前面。
+
+```python
+# 当函数的参数不确定时，可以使用*args和**kwargs。*args没有key值，**kwargs有key值
+
+def fun_var_args(farg, *args):
+    print 'args:', farg
+    for value in args:
+        print 'another arg:',value
+
+# *args可以当作可容纳多个变量组成的list或tuple
+fun_var_args(1, 'two', 3, None)
+
+#args: 1
+#another arg: two
+#another arg: 3
+#another arg: None
+
+
+def fun_args(arg1, arg2, arg3):
+    print 'arg1:', arg1
+    print 'arg2:', arg2
+    print 'arg3:', arg3
+
+myargs = ['1', 'two', None]     # 定义列表
+fun_args(*myargs)
+
+# 输出：
+#arg1: 1
+#arg2: two
+#arg3: None
+
+
+
+def fun_var_kwargs(farg, **kwargs):
+    print 'args:',farg
+    for key in kwargs:
+        print 'another keyword arg:%s:%s' % (key, kwargs[key])
+        
+fun_var_kwargs(1, myarg1='two', myarg2=3, myarg3=None)
+# 输出：
+#args: 1
+#another keyword arg:myarg1:two
+#another keyword arg:myarg2:3
+#another keyword arg:myarg3:None
+
+def fun_args(arg1, arg2, arg3):
+    print 'arg1:', arg1
+    print 'arg2:', arg2
+    print 'arg3:', arg3
+
+mykwargs = {'arg1': '1', 'arg2': 'two', 'arg3': None}      # 定义字典类型
+fun_args(**mykwargs)
+
+# 输出：
+#arg1: 1
+#arg2: two
+#arg3: None
+```
+
+
 
 hasattr()
 ---
@@ -1081,6 +1272,11 @@ for index,value in enumerate(lst):
     4,5
     5,6
 ```
+
+join
+---
+
+
 
 切片操作
 ---
