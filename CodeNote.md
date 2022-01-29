@@ -67,6 +67,20 @@ tensor([[False, False, False, False],
 tensor([ 1.2252,  0.5002,  0.6248,  2.0139])
 ```
 
+#### troch.tensor.size()
+
+```python
+import torch
+x = torch.tensor([20], dtype=torch.long)[None,...].repeat(10, 2)
+print(x)
+x.size(1) #返回列的维度
+x.size(0) #返回行的维度
+```
+
+![image-20220129112511184](assess/image-20220129112511184.png)
+
+
+
 ### 张量数学运算
 
 #### torch.add()
@@ -411,17 +425,165 @@ tensor([[[1, 0, 0],
 
 ### nn.Linear()
 
-> 用于设置网络中的**全连接层的**
+> 用于设置网络中的**全连接层的**,主要是对数据进行线性变换$y=xA^T+b$
 
 ![img](assess/817161-20200723154555102-547248799.png)
 
 
 
 - `in_features`指的是输入的二维张量的大小，即输入的`[batch_size, size]`中的size。
-- `out_features`指的是输出的二维张量的大小，即输出的二维张量的形状为`[batch_size，output_size]`，当然，它也代表了该全连接层的神经元个数。
+- `out_features`指的是输出的二维张量的大小，即输出的二维张量的形状为`[batch_size，output_size]`，**当然，它也代表了该全连接层的神经元个数。**
 - 从输入输出的张量的shape角度来理解，相当于一个输入为`[batch_size, in_features]`的张量变换成了`[batch_size, out_features]`的输出张量。
 
+从数学角度解析
 
+首先输入数据是 `[batchsize, in_features]` ,这里我们设定的是 `4X2` 的张量。数学角度来说就是4X2的矩阵。
+
+![image-20220125233117925](assess/image-20220125233117925.png)
+
+batchsize=4,in_features=2
+
+那么这里的每一行数据 `[1,2],[2,3][2,2],[1,1]` 都代表一个样例，列数代表每一个样例的特征数，也就是 `in_features` 。所以这个矩阵代表的含义就是：输入四个样例（sample），每个样例由2个特征(feature)表示。
+
+那么 torch.nn.Linear 就是对输入的样例进行一个线性变换。Linear的作用如下： 
+
+Linear首先根据 `in_features,out_features` 构造初始的权重矩阵$A$（weight） [`out_features,in_features`] ，和偏置 $b$(bias) [`out_feature`s]。
+
+初始的权重矩阵 $A$， 经过转置之后就是 [`in_features，out_features`] ，也就是 2X3 矩阵。
+
+这里我们假设$A^T$为：
+
+![image-20220125233343313](assess/image-20220125233343313.png)
+
+初始偏置是 `[out_features]` ,也就是 `1X3` 的矩阵。假设 b为：
+
+![image-20220125233717350](assess/image-20220125233717350.png)
+
+于是输入数据$x$经过线性变换$y=xA^T+b$得到：
+
+![image-20220125233807592](assess/image-20220125233807592.png)
+
+Linear Layer的输入输出：
+输入数据大小是： [batchsize, in_features]
+输出数据大小是： [batchsize, out_features]
+batchsize : 输入样例数
+in_features : 输入样例特征数
+out_features : 输出样例特征数
+
+
+
+```python
+import torch
+
+x = torch.randn(128, 20)  # 输入的维度是（128，20）
+m = torch.nn.Linear(20, 30)  # 20,30是指维度
+output = m(x) #output=x*A^T+b
+print('m.weight.shape:\n ', m.weight.shape) #A=m.weight,为权重矩阵	=>torch.Size([30, 20])
+print('m.bias.shape:\n', m.bias.shape)      #b=m.bias,为偏置	=>torch.Size([30])
+print('output.shape:\n', output.shape)      #输出的维度	=>torch.Size([128, 30])
+
+# ans = torch.mm(input,torch.t(m.weight))+m.bias 等价于下面的
+ans = torch.mm(x, m.weight.t()) + m.bias   #m.weight.t()对权重矩阵进行转置,=>torch.Size([128, 30])
+print('ans.shape:\n', ans.shape)
+
+print(torch.equal(ans, output))							#=>True
+
+```
+
+```python
+import torch as t
+from torch import nn
+
+# in_features由输入张量的形状决定，out_features则决定了输出张量的形状 
+connected_layer = nn.Linear(in_features = 64*64*3, out_features = 1)
+
+# 假定输入的图像形状为[64,64,3]
+input = t.randn(1,64,64,3)
+
+# 将四维张量转换为二维张量之后，才能作为全连接层的输入
+input = input.view(1,64*64*3)
+print(input.shape)
+output = connected_layer(input) # 调用全连接层
+print(output.shape)
+
+>>>
+input shape is %s torch.Size([1, 12288])
+output shape is %s torch.Size([1, 1])
+
+```
+
+### nn.embeding()
+
+> torch.nn.Embedding(`num_embeddings, embedding_dim`, padding_idx=None,max_norm=None, norm_type=2.0,   scale_grad_by_freq=False, sparse=False,  _weight=None)
+
+- **num_embeddings (python:int)** – 词典的大小尺寸，比如总共出现5000个词，那就输入5000。此时index为（0-4999）
+- **embedding_dim (python:int)** – 嵌入向量的维度，即用多少维来表示一个符号。
+- padding_idx (python:int, optional) – 填充id，比如，输入长度为100，但是每次的句子长度并不一样，后面就需要用统一的数字填充，而这里就是指定这个数字，这样，网络在遇到填充id时，就不会计算其与其它符号的相关性。**（初始化为0）**
+- max_norm (python:float, optional) – 最大范数，如果嵌入向量的范数超过了这个界限，就要进行再归一化。
+- norm_type (python:float, optional) – 指定利用什么范数计算，并用于对比max_norm，默认为2范数。
+- scale_grad_by_freq (boolean, optional) – 根据单词在mini-batch中出现的频率，对梯度进行放缩。默认为False.
+- sparse (bool, optional) – 若为True,则与权重矩阵相关的梯度转变为稀疏张量。
+
+```python
+#建立词向量层
+embed = torch.nn.Embedding(n_vocabulary,embedding_size)
+```
+
+### nn.Parameter()
+
+这个函数理解为类型转换函数，将一个不可训练的类型`Tensor`转换成可以训练的类型`parameter`并将这个`parameter`绑定到这个`module`里面。从而在参数优化的时候可以进行优化
+
+![img](assess/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI4NzUzMzcz,size_16,color_FFFFFF,t_70.png)
+
+### nn.dropout()
+
+nn.dropout()是为了**防止或减轻过拟合**而使用的函数，它一般用在[全连接层](https://so.csdn.net/so/search?q=全连接层&spm=1001.2101.3001.7020)
+
+Dropout就是在不同的训练过程中随机扔掉一部分[神经元](https://so.csdn.net/so/search?q=神经元&spm=1001.2101.3001.7020)。**也就是让某个神经元的激活值以一定的概率p，让其停止工作，这次训练过程中不更新权值，也不参加神经网络的计算。但是它的权重得保留下来（只是暂时不更新而已），因为下次样本输入时它可能又得工作了**
+
+torch.nn.Dropout(p=0.5,inplace=False)
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20210209131758306.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80Mjk3OTE1Mg==,size_16,color_FFFFFF,t_70#pic_center)
+
+### nn.Sequential()
+
+nn.Sequential 是一个有序的容器，神经网络模块将按照在传入构造器的顺序依次被添加到计算图中执行，同时以神经网络模块为元素的有序字典也可以作为传入参数。
+
+![img](assess/webp.webp)
+
+```python
+# 写法一
+net = nn.Sequential(
+    nn.Linear(num_inputs, 1)
+    # 此处还可以传入其他层
+    )
+
+# 写法二
+net = nn.Sequential()
+net.add_module('linear', nn.Linear(num_inputs, 1))
+# net.add_module ......
+
+
+# 写法三
+from collections import OrderedDict
+net = nn.Sequential(OrderedDict([
+          ('linear', nn.Linear(num_inputs, 1))
+          # ......
+        ]))
+```
+
+### nn.LayerNorm()
+
+
+
+torch.zeros()
+---
+
+> 生成全0张量
+
+```python
+torch.zeros(1,100,256)#生成[1,100,256]的全0张量
+```
 
 
 
@@ -439,6 +601,26 @@ torch.optim.Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0
 #真实使用
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 ```
+
+### torch.cuda()
+
+```python
+torch.cuda.is_available() #查看是否有可用的GPU
+torch.cuda.device_count() #查看当前可用的GPU数量
+torch.cuda.current_device() #查看当前使用的GPU序号
+torch.cuda.get_device_capability(device) #查看指定GPU的容量
+torch.cuda.get_device_name(device) #查看指定GPU的名称
+torch.cuda.empty_cache() #清空程序占用的GPU资源
+
+#为GPU设置随机种子
+torch.cuda.manual_seed(seed), torch.cuda.manual_seed_all(seed)
+```
+
+torch.save()
+
+> 模型保存函数
+>
+> 
 
 
 
@@ -475,9 +657,23 @@ DataLoader 的参数很多，但我们常用的主要有 5 个：
 
 > `torch.utils.data.Dataset()`: Dataset 抽象类， 所有自定义的 Dataset 都需要继承它，并且必须复写 `__getitem__()` 这个类方法。
 
+mdoel.train(),model.eval()
+---
 
+model.train()和model.eval()的区别主要在于Batch Normalization和Dropout两层。
 
+### model.train()
 
+**启用 Batch Normalization 和 Dropout**
+
+如果模型中有BN层(**Batch Normalization**）和 **Dropout**，需要在**训练时**添加`model.train()`。`model.train()`是保证BN层能够用到每一批数据的均值和方差。对于Dropout，`model.train()`是<u>随机取一部分网络连接来训练更新参数</u>。
+
+### model.eval()
+
+**不启用 Batch Normalization 和 Dropout。**
+如果模型中有BN层(Batch Normalization）和Dropout，在测试时添加model.eval()。m**odel.eval()是保证BN层能够用全部训练数据的均值和方差，即测试过程中要保证BN层的均值和方差不变。**对于Dropout，model.eval()是<u>利用到了所有网络连接</u>，即不进行随机舍弃神经元。
+
+训练完train样本后，生成的模型model要用来测试样本。在model(test)之前，需要加上`model.eval()`，否则的话，有输入数据，即使不训练，它也会改变权值。这是model中含有BN层和Dropout所带来的的性质。
 
 # numpy
 
@@ -1272,6 +1468,18 @@ for index,value in enumerate(lst):
     4,5
     5,6
 ```
+
+isinstance()
+---
+
+isinstance() 函数来判断一个对象是否是一个已知的类型
+
+```python
+if isinstance(smiles_or_mol, str):
+  
+```
+
+
 
 join
 ---
