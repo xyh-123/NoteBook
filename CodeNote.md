@@ -10,6 +10,8 @@ Pytorch
 torch.Tensor
 ---
 
+![img](assess/e7e538471a8396fcb99cb72bc230223e.JPEG)
+
 ![图片](CodeNote.assets/640.webp)
 
 - dtype：张量的数据类型，如 torch.FloatTensor，torch.cuda.FloatTensor，用的最多的一般是 float32 和 int64(torch.long)
@@ -307,7 +309,7 @@ print(t_0.shape)     # torch.Size([2, 3, 1])
 print(t_1.shape)     # torch.Size([1, 2, 3, 1])
 ```
 
-torch.unsqueeze()
+#### torch.unsqueeze()
 
 > `「torch.unsqueeze(input, dim, out=None)：`依据 dim 扩展维度」
 
@@ -340,6 +342,48 @@ tensor([[0],
 torch.Size([4, 1])
 ```
 
+#### torch.tril()
+
+> `torch.tril`(*input*, *diagonal=0*, *, *out=None*) ，将二维矩阵变成下三角矩阵。对角线参数控制要考虑的对角线。如果对角线 = 0，则保留主对角线上和主对角线以下的所有元素。正<u>值包括主对角线以上的对角线，负值同样也包括主对角线以下的对角线。</u>
+
+```python
+a = torch.randn(3, 3)
+a
+torch.tril(a)
+
+>>> tensor([[-1.0813, -0.8619,  0.7105],
+        [ 0.0935,  0.1380,  2.2112],
+        [-0.3409, -0.9828,  0.0289]])
+>>> torch.tril(a)
+tensor([[-1.0813,  0.0000,  0.0000],
+        [ 0.0935,  0.1380,  0.0000],
+        [-0.3409, -0.9828,  0.0289]])
+
+
+b = torch.randn(4, 6)
+b
+>>> tensor([[ 1.2219,  0.5653, -0.2521, -0.2345,  1.2544,  0.3461],
+        [ 0.4785, -0.4477,  0.6049,  0.6368,  0.8775,  0.7145],
+        [ 1.1502,  3.2716, -1.1243, -0.5413,  0.3615,  0.6864],
+        [-0.0614, -0.7344, -1.3164, -0.7648, -1.4024,  0.0978]])
+torch.tril(b, diagonal=1)
+>>> tensor([[ 1.2219,  0.5653,  0.0000,  0.0000,  0.0000,  0.0000],
+        [ 0.4785, -0.4477,  0.6049,  0.0000,  0.0000,  0.0000],
+        [ 1.1502,  3.2716, -1.1243, -0.5413,  0.0000,  0.0000],
+        [-0.0614, -0.7344, -1.3164, -0.7648, -1.4024,  0.0000]])
+torch.tril(b, diagonal=-1)
+>>>tensor([[ 0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
+        [ 0.4785,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000],
+        [ 1.1502,  3.2716,  0.0000,  0.0000,  0.0000,  0.0000],
+        [-0.0614, -0.7344, -1.3164,  0.0000,  0.0000,  0.0000]])
+
+
+```
+
+
+
+
+
 
 
 torch.nn(nn)
@@ -351,17 +395,239 @@ torch.nn(nn)
 
 > 所有网络的基类，自己建立的模型必须要集成这个类.
 >
-> Module中封装了常用的神经网络层，如卷积层、池化层、RNN等
+> Module中封装了常用的神经网络层，如卷积层、池化层、RNN等,所有继承nn.Module实现的模型都是其子类
+
+#### `add_module`(*name*, *module*)
+
+> 为模型添加子模型
+
+name:string类型，子模型的名称
+
+module：Module类型，子模型
+
+#### `apply`(fn)
+
+模型参数初始化方法，fn为一个初始化参数的函数
+
+第一种写法
+
+```python
+def init_weights(m):
+	print(m)
+  if type(m) == nn.Linear:
+  	m.weight.fill_(1.0)
+  	print(m.weight)
+net = nn.Sequential(nn.Linear(2, 2), nn.Linear(2, 2))
+net.apply(init_weights)
+```
+
+第二种写法
+
+```python
+class GPT(nn.Module):
+    """  the full GPT language model, with a context size of block_size """
+
+    def __init__(self, config):
+        super().__init__()
+
+        # input embedding stem
+        self.config = config
+        self.tok_emb = nn.Embedding(config.vocab_size, config.n_embd)
+        self.type_emb = nn.Embedding(2, config.n_embd)
+        if config.num_props:
+            self.prop_nn = nn.Linear(config.num_props, config.n_embd)
+        
+        self.pos_emb = nn.Parameter(torch.zeros(1, config.block_size, config.n_embd))
+        self.drop = nn.Dropout(config.embd_pdrop)
+        # transformer
+        self.blocks = nn.Sequential(*[Block(config) for _ in range(config.n_layer)])
+        # dec#EEFFFFoder head
+        self.ln_f = nn.LayerNorm(config.n_embd)
+        self.head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+
+        self.block_size = config.block_size
+
+        if config.lstm:
+            self.lstm = nn.LSTM(input_size = config.n_embd, hidden_size = config.n_embd, num_layers = 					config.lstm_layers, dropout = 0.3, bidirectional = False)
+        self.apply(self._init_weights)  #常用的模型初始化方法,将模型初始化应用到模型上
+```
+
+#### `children()`
+
+> 返回直接子模块的迭代器。
+
+#### `named_children`()
+
+> 
+
+`modules()`
+
+> 返回网络中所有模块的迭代器
+
+```python
+l = nn.Linear(2, 2)
+net = nn.Sequential(l, l)
+for idx, m in enumerate(net.modules()):
+		print(idx, '->', m)
+
+0 -> Sequential(
+  (0): Linear(in_features=2, out_features=2, bias=True)
+  (1): Linear(in_features=2, out_features=2, bias=True)
+)
+1 -> Linear(in_features=2, out_features=2, bias=True)
+```
+
+#### children()和modules()的区别
+
+```python
+import torch
+import torch.nn as nn
+ 
+class TestModule(nn.Module):
+    def __init__(self):
+        super(TestModule,self).__init__()
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(16,32,3,1),
+            nn.ReLU(inplace=True)
+        )
+        self.layer2 = nn.Sequential(
+            nn.Linear(32,10)
+        )
+ 
+    def forward(self,x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+
+model = TestModule()
+ 
+
+print("model.children():")
+for idx, m in enumerate(model.children()):
+        print(idx, '->', m)
+print("model.modules():")
+for idx, m in enumerate(model.modules()):
+        print(idx, '->', m)
+for name, module in model.named_children():
+    print('children module:', name)
+ 	
+for name, module in model.named_modules():
+    print('modules:', name)
 
 ```
 
+![image-20220130112125791](assess/image-20220130112125791.png)
+
+
+
+#### `named_modules()`
+
+> `named_modules`(*memo=None*, *prefix=''*, *remove_duplicate=True*)
+
+返回一个元组(string,Module)
+
+```python
+for name, module in model.named_children():
+    if name in ['conv4', 'conv5']:
+        print(module)
 ```
 
 
 
+#### `eval()`
+
+> 将模型设置为评估模式，相当于 `self.train(False)`
 
 
 
+#### `train()`
+
+> 将模块设置为训练模式。
+
+
+
+#### `zero_grad`()
+
+> `zero_grad`(*set_to_none=False*),将所有模型的参数，将所有模型参数的梯度设置为零。
+
+
+
+
+
+#### `state_dict`()
+
+> `state_dict`(*destination=None*, *prefix=''*, *keep_vars=False*),返回包含模块的整个状态的字典。
+
+```python
+module.state_dict().keys()
+>>>['bias', 'weight']
+```
+
+#### `parameters`()
+
+> `parameters`(*recurse=True*),通过模块参数返回迭代器。这通常会传递给优化器。
+
+如果为recurse=True，则生成该模块和所有子模块的参数。否则，只生成作为该模块直接成员的参数。
+
+```python
+for param in model.parameters():
+    print(type(param), param.size())
+>>>
+<class 'torch.Tensor'> (20L,)
+<class 'torch.Tensor'> (20L, 1L, 5L, 5L)
+```
+
+#### `named_parameters`()
+
+> `named_parameters`(*prefix=''*, *recurse=True*),通过模块参数返回迭代器，生成参数的名称和参数本身。
+
+prefix:string类型，所有参数名称前的前缀。
+
+如果为recurse=True，则生成该模块和所有子模块的参数。否则，只生成作为该模
+
+```python
+for name, param in self.named_parameters():
+   if name in ['bias']:
+       print(param.size())
+```
+
+#### `register_buffer()`
+
+> `register_buffer`(*name*, *tensor*, *persistent=True*)
+
+该方法的作用是定义一组参数，该组参数的特别之处在于：**模型训练时不会更新**（即调用 optimizer.step() 后该组参数不会变化，只可人为地改变它们的值），**但是保存模型时，该组参数又作为模型参数不可或缺的一部分被保存。**
+
+这**通常用于注册一个不应被视为模型参数的缓冲区。**例如，BatchNorm的running_mean不是一个参数，而是模块状态的一部分。默认情况下，缓冲区是持久的，将与参数一起保存。可以通过将persistent设置为False来更改此行为。<u>持久化缓冲区和非持久化缓冲区之间的唯一区别是后者不会成为该模块的state_dict的一部分。</u>
+
+name:缓冲区的名称。这个模块可以使用给定的名称来访问这个缓冲区
+
+
+
+#### `forward()`
+
+> `forward()`不是nn.Module里面的函数，但是所有继承其实现的模型必须有这个函数。**模型训练时，不需要调用forward这个函数，只需要在实例化一个对象中传入对应的参数就可以自动调用 forward 函数。**
+
+```python
+class Module(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # ......
+
+    def forward(self, x):
+        # ......
+        return x
+
+
+data = ......  # 输入数据
+
+# 实例化一个对象
+model = Module()
+
+# 前向传播
+model(data)
+
+# 而不是使用下面的
+# model.forward(data)  
+```
 
 ### nn.Parameter()
 
@@ -572,7 +838,73 @@ net = nn.Sequential(OrderedDict([
         ]))
 ```
 
-### nn.LayerNorm()
+论文中的写法
+
+```python
+blocks = nn.Sequential(*[Block(config) for _ in range(8)]) #前面一定要有'*'，否则会报错
+#[Block(config) for _ in range(8)]=>[Block(config),Block(config),...,Block(config)]
+```
+
+如何没有'*'则会报下面的错误
+
+![img](assess/WOK0%5B4IL%5B0ZCP19S$%7DVQQMB.png)
+
+net表示一个神经网络
+
+![img](assess/_%25C77L1FYF%7B39EH9LCNLQW.png)
+
+不带*的是列表，带\*的是元素，所以`nn.Sequential(*net[3: 5])`中的`*net[3: 5]`就是给`nn.Sequential()`这个容器中传入多个层。
+
+### Normalization Layers
+
+**BatchNorm：**batch方向做归一化，<u>算NHW的均值，对小batchsize效果不好</u>；<u>BN主要缺点是对batchsize的大小比较敏感</u>，由于每次计算均值和方差是在一个batch上，所以如果batchsize太小，则计算的均值、方差不足以代表整个数据分布
+
+**LayerNorm：**channel方向做归一化，算CHW的均值，<u>主要对RNN作用明显</u>；
+
+**InstanceNorm：**一个channel内做归一化，<u>算H*W的均值，用在风格化迁移；</u>因为在图像风格化中，生成结果主要依赖于某个图像实例，所以对整个batch归一化不适合图像风格化中，因而对HW做归一化。可以加速模型收敛，并且保持每个图像实例之间的独立。
+
+**GroupNorm：**将channel方向分group，然后每个group内做归一化，<u>算(C//G)HW的均值；这样与batchsize无关</u>，不受其约束。
+
+**SwitchableNorm：**是<u>将BN、LN、IN结合，赋予权重，让网络自己去学习归一化层应该使用什么方法。</u>
+
+![img](assess/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3NoYW5nbGlhbmxt,size_16,color_FFFFFF,t_70.png)
+
+- N代表batch-size的维度
+- H\W代表feature-map尺寸
+- C代表feature-map的通道数
+
+但是上图是只有3个维度的，结合paper，是**将H/W融合到了一个维度上**，怎么理解呢，原来HW是一个面（二维），现在将其变成竖直的一条直线（1列-1维），其他维度不变，也就将4维变成了3维。
+
+#### nn.LayerNorm()
+
+> `torch.nn.LayerNorm`(*normalized_shape*, *eps=1e-05*, *elementwise_affine=True*, *device=None*, *dtype=None*)
+
+![image-20220129174731225](assess/image-20220129174731225.png)
+
+normalized_shape： 输入尺寸(int或者list或tensor的size)
+eps： 为保证数值稳定性（分母不能趋近或取0）,给分母加上的值。默认为1e-5。
+elementwise_affine： 布尔值，当设为true，给该层添加可学习的仿射变换参数。
+
+![image-20220129175141664](assess/image-20220129175141664.png)
+
+
+
+```python
+#官网例子
+# NLP Example
+batch, sentence_length, embedding_dim = 20, 5, 10
+embedding = torch.randn(batch, sentence_length, embedding_dim)
+layer_norm = nn.LayerNorm(embedding_dim)
+# Activate module
+layer_norm(embedding)
+# Image Example
+N, C, H, W = 20, 5, 10, 10
+input = torch.randn(N, C, H, W)
+# Normalize over the last three dimensions (i.e. the channel and spatial dimensions)
+# as shown in the image below
+layer_norm = nn.LayerNorm([C, H, W])
+output = layer_norm(input)
+```
 
 
 
@@ -805,7 +1137,23 @@ a,b,c
  array([1, 2, 2, 3, 3, 4]))
 ```
 
+random.uniform()
+---
 
+> np.random.uniform(low=0,high=1.0,size=None)
+>
+> 功能：从一个**均匀分布[low,high)中随机采样**，注意定义域是**左闭右开**，即包含low，不包含high.
+
+- low: 采样下界，float类型，默认值为0；
+- high: 采样上界，float类型，默认值为1；
+- size: 输出样本数目，为int或元组(tuple)类型，例如，size=(m,n,k), 则输出 m * n * k 个样本，缺省时输出1个值。
+
+返回值：ndarray类型，其形状和参数size中描述一致。
+
+random.shuffle()
+---
+
+> np.random.shuffle(),重新排序返回一个随机序列
 
 pickle
 ===
@@ -1359,6 +1707,245 @@ for i in tqdm(range(1000)):
 
 
 
+re
+===
+
+compile()
+---
+
+> compile 函数——返回一个匹配对象，当需要过滤数据的时候可以生成多个匹配对象
+>
+> re.compile(正则表达式).findall(数据)
+
+```python
+pat=re.compile(r'<br/>')#过滤换行标签
+pat1=re.compile('\'?\s\'?,?')#过滤空白符
+rst=re.sub(pat,'',string)
+rst1=re.sub(pat1,'',rst)
+```
+
+RDkit
+===
+
+Chem
+---
+
+### 读分子
+
+#### MolFromSmiles()
+
+> 将SMILES分子转换为mol分子
+
+```python
+m = Chem.MolFromSmiles(smiles) #SMILES转mol
+```
+
+如果SMILES是不合法的讲返回None，并返回错误信息
+
+```
+m1 = Chem.MolFromSmiles('CO(C)C')
+```
+
+![image-20220202223222310](assess/image-20220202223222310.png)
+
+```
+m2 = Chem.MolFromSmiles('c1cc1')
+```
+
+![image-20220202223256249](assess/image-20220202223256249.png)
+
+#### MolFromMolFile()
+
+> 从.mol文件中读取分子
+
+```python
+m = Chem.MolFromMolFile('data/input.mol')
+
+stringWithMolData=open('data/input.mol','r').read()
+m = Chem.MolFromMolBlock(stringWithMolData)
+```
+
+#### 从分子集中读取分子
+
+##### SDMolSupplier()
+
+```python
+suppl = Chem.SDMolSupplier('data/5ht3ligs.sdf')
+for mol in suppl:
+   print(mol.GetNumAtoms())
+>>>
+20
+24
+24
+26
+mols = [x for x in suppl]
+len(mols)
+>>>20
+
+with Chem.SDMolSupplier('data/5ht3ligs.sdf') as suppl:
+  for mol in suppl:
+     if mol is None: continue
+		  print(mol.GetNumAtoms())
+```
+
+##### ForwardSDMolSupplier()
+
+> 返回的分子集**不能进行随机访问对象**
+
+```python
+>>> inf = open('data/5ht3ligs.sdf','rb')
+>>> with Chem.ForwardSDMolSupplier(inf) as fsuppl:
+...   for mol in fsuppl:
+...     if mol is None: continue
+...     print(mol.GetNumAtoms())
+```
+
+
+
+```python
+>>> inf = open('data/5ht3ligs.sdf','rb')
+>>> with Chem.ForwardSDMolSupplier(inf) as fsuppl:
+...   fsuppl[0] #不可以
+Traceback (most recent call last):
+  ...
+TypeError: 'ForwardSDMolSupplier' object does not support indexing
+```
+
+###### 从压缩文件中读取
+
+```python
+>>> import gzip
+>>> inf = gzip.open('data/actives_5ht3.sdf.gz')
+>>> with Chem.ForwardSDMolSupplier(inf) as gzsuppl:
+...    ms = [x for x in gzsuppl if x is not None]
+>>> len(ms)
+180
+```
+
+对于同时读取有大量记录的Smiles或SDF文件，MultithreadedMolSuppliers可以这样使用:
+
+#### MultithreadedMolSuppliers()
+
+> 默认情况下，一个读取线程用于从文件中提取记录，一个写入线程用于处理这些记录。注意，由于是多线程，输出可能不是预期的顺序。此外，**MultithreadingSmilesMolsupplier**和**MultithreadingSDMolsupplier**不能作为随机访问对象使用。
+
+```python
+>>> i = 0
+>>> with Chem.MultithreadedSDMolSupplier('data/5ht3ligs.sdf') as sdSupl:
+...   for mol in sdSupl:
+...     if mol is not None:
+...       i += 1
+...
+>>> print(i)
+```
+
+### 写分子
+
+#### MolToSmiles()
+
+> 将mol类型的分子转变成SMILES
+>
+> **MolToSmiles(mol, isomericSmiles, kekuleSmiles, canonical, ...)**，需要注意的是 SMILES 提供的是标准的，所以**不管一个特定的分子如何输入，输出应该是相同的**
+
+- kekuleSmiles：默认False，不使用kekule时：脂肪族碳用"C"表示（大写），芳香族用"c"表示（小写）
+- isomericSmiles：默认True，区分同分异构体（**"@"表示手性，"\\"和"/"表示顺反异构**）
+- canonical：默认True，输出标准SMILES
+
+```python
+>>> m = Chem.MolFromMolFile('data/chiral.mol')
+>>> Chem.MolToSmiles(m)
+'C[C@H](O)c1ccccc1'
+>>> Chem.MolToSmiles(m,isomericSmiles=False) #不区分同分异构体
+'CC(O)c1ccccc1'
+```
+
+```python
+>>> Chem.MolToSmiles(Chem.MolFromSmiles('C1=CC=CN=C1'))
+'c1ccncc1'
+>>> Chem.MolToSmiles(Chem.MolFromSmiles('c1cccnc1'))
+'c1ccncc1'
+>>> Chem.MolToSmiles(Chem.MolFromSmiles('n1ccccc1'))
+'c1ccncc1'
+```
+
+将分子用凯库勒形式表示
+
+```python
+>>> Chem.Kekulize(m)
+>>> Chem.MolToSmiles(m,kekuleSmiles=True)
+'C[C@H](O)C1=CC=CC=C1'
+```
+
+#### 将分子保存为分子集
+
+```python
+>>> with Chem.SDWriter('data/foo.sdf') as w:
+...   for m in mols:
+...     w.write(m)
+>>>
+```
+
+
+
+### 移除氢元素——RemoveHs()
+
+```
+m3 = Chem.RemoveHs(m3)
+```
+
+分子操作
+---
+
+### GetNumAtoms()
+
+> 返回分子的原子数目
+
+```python
+mol = Chem.MolFromSmiles(smiles) 
+mol.GetNumAtoms()
+```
+
+### GetAtoms()
+
+> 返回原子列表
+
+### GetAtomicNum()
+
+> 返回原子在元素周期表的序号
+
+### GetBonds()
+
+> 返回分子的化学键列表
+
+### GetBondType()
+
+> 返回化学键的类型，单键，双键，三键
+
+```python
+>>> m = Chem.MolFromSmiles('C1OC1')
+>>> for atom in m.GetAtoms():
+...   print(atom.GetAtomicNum())
+...
+6
+8
+6
+>>> print(m.GetBonds()[0].GetBondType())
+SINGLE
+```
+
+### GetAtomWithIdx()
+
+> 返回对应index的原子，GetAtomWithIdx(index)
+
+### GetSymbol()
+
+> 返回原子的类型
+
+
+
+
+
+
+
 Python方法
 ===
 
@@ -1472,17 +2059,99 @@ for index,value in enumerate(lst):
 isinstance()
 ---
 
-isinstance() 函数来判断一个对象是否是一个已知的类型
+isinstance(object, classinfo)函数来判断一个对象是否是一个已知的类型
+
+- object -- 实例对象。
+- classinfo -- 可以是直接或间接类名、基本类型或者由**它们组成的元组**。
 
 ```python
 if isinstance(smiles_or_mol, str):
   
 ```
 
+isinstance() 与 type() 区别：
+
+- type() 不会认为子类是一种父类类型，不考虑继承关系。
+- isinstance() 会认为子类是一种父类类型，考虑继承关系。
+
+如果要判断两个类型是否相同推荐使用 isinstance()。
+
+```python
+class A:
+    pass
+class B(A):
+    pass
+isinstance(A(), A)    # returns True
+type(A()) == A        # returns True
+isinstance(B(), A)    # returns True
+type(B()) == A        # returns False
+```
 
 
-join
+
+endswith() 
 ---
+
+> endswith() 方法用于判断字符串是否以指定后缀结尾，如果以指定后缀结尾返回True，否则返回False
+
+```
+str.endswith(suffix[, start[, end]])
+```
+
+- suffix -- 该参数可以是一个字符串或者是一个元素。
+- start -- 字符串中的开始位置。
+- end -- 字符中结束位置。
+
+join()
+---
+
+join()： 连接字符串数组。将字符串、元组、列表中的元素以指定的字符(分隔符)连接生成一个新的字符串
+
+需要注意的是当序列中的元素包含数字的时候，不能直接转化成字符串，否则会报错
+
+```
+l=[(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)]
+print('→'.join(l))
+```
+
+![img](assess/clipboard.png)
+
+```
+l=[(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)]
+for i in range(len(l)):
+    l[i]=str(l[i])
+print('→'.join(l))
+```
+
+![img](assess/clipboard-16437895480961.png)
+
+当join（）方法应用于字典的时候，只将key值连接成字符串
+
+```
+seq= {'hello':'1','good':'2','boy':'3','doiido':'4'}
+print(' '.join(seq))
+```
+
+![img](assess/clipboard-16437895782332.png)
+
+当join（）方法应用于字符串的时候，<u>是将每一个字符都连接成一个新的字符，包括字符串中间的空格</u>
+
+```
+seq= "hello good boy doiido" print('→'.join(seq))
+```
+
+![img](assess/clipboard-16437896190403.png)
+
+strip()
+---
+
+> strip() 方法用于移除字符串头尾指定的字符**（默认为空格或换行符）**或字符序列。返回值为处理后的新字符串
+
+**注意：**该方法只能删除开头或是结尾的字符，不能删除中间部分的字符。
+
+```python
+str.strip([chars]);
+```
 
 
 
@@ -1569,8 +2238,7 @@ print(a[:, 0:2], a[:, 0:2].shape)
  [17 18]] (5, 2)
 ```
 
-三维数组
----
+### 三维数组
 
 > `x[::]`，里面有两个冒号，分割出三个间隔，三个间隔的前、中和后分别表示对象的第0、1、2个维度
 
@@ -1660,15 +2328,62 @@ print(b[:, :, -1], b[:, :, -1].shape)
 print(b[:, :, 0:2:], b[:, :, 0:2].shape)
 ```
 
+set()集合
+---
 
+- 交: x&y
 
+- 并: x|y
 
+- 差: x-y
 
+- 对称差集：x^y
 
+- 判断两个集合是否相交：`x.isdisjoint(y)` 若相交则返回False
 
+- 判断包含和被包含的关系： 
 
+  ```python
+  y0.issubset(y)   #判断y0是否是y的子集
+  y.issuperset(y0) #判断y是否是y0的子集
+  ```
 
+  ### 集合操作
 
+  ```python
+  x.add(obj) #往集合中添加一个元素
+  
+  x.update(obj) #往集合x中添加obj中的所有项集，obj可以是list，set中的元素，也可以是dict中的键值
+  
+  x.remove(obj) #删除obj
+  
+  x.pop() #随机弹出某个元素
+  
+  x.discard(obj) #删除数据obj
+  ```
+
+  
+
+assert
+---
+
+> 断言函数，assert断言是声明其布尔值必须为真的判定，如果发生异常就说明表达示为假。用于测试表达式
+
+```python
+assert t <= self.block_size, "Cannot forward, model block size is exhausted."
+```
+
+list操作
+---
+
+```python
+l1=[1,2,3,4,5,6]
+l2=[1,2,3,4,5,6]
+l3=l1+l2
+l3
+```
+
+![image-20220202110203013](assess/image-20220202110203013.png)
 
 
 
