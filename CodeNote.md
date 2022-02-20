@@ -5,7 +5,158 @@ Pytorch
 
 [PyTorch中文文档](https://pytorch-cn.readthedocs.io/zh/latest/)
 
+数、数组、矩阵(向量也是矩阵)的区别
+---
 
+数：[torch](https://so.csdn.net/so/search?q=torch&spm=1001.2101.3001.7020).size([ ]) 
+
+数组： torch.size([个数])
+
+矩阵（向量）：torch.size([行数，列数])
+
+![img](assess/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L255aXN0X3lhbmdndWFuZw==,size_16,color_FFFFFF,t_70.png)
+
+矩阵乘法运算
+---
+
+### broadcast机制
+
+> 指在两个不同shape的张量的矩阵运算中，小的tensor会扩展到跟大的tensor一致的shape
+
+两个Tensors只有在下列情况下下才能进行broadcast操作：
+
+- 每个tensor至少有一维
+- 遍历所有的维度，从尾部维度开始，**每个对应的维度大小要么相同，要么其中一个是1，要么其中一个不存在**
+
+两个矩阵broadcast之后的结果**每一维都是两个矩阵中对应维度的最大值**，**如果维数不一致则在前面加一补齐**。
+
+![img](assess/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAVGhpbmtA,size_20,color_FFFFFF,t_70,g_se,x_16.png)
+
+```python
+#按照尾部对齐
+x=torch.empty(5,3,4,1)
+y=torch.empty( 3,1,1)
+ 
+#1st尾部维度：都为1
+#2nd尾部维度：y为1，“要么其中一个是1”
+#3rd尾部维度：都为3
+#4th尾部维度：y不不在，“要么有一个不存在”
+#综上，x和y是可以broadcasting的
+
+#x=>（5,3,4,1）
+#y=>（1,3,1,1）
+#broadcast之后（5,3,4,1）
+
+#但是
+x=torch.empty(5,2,4,1)
+y=torch.empty(  3,1,1)
+ 
+# 1st尾部维度：都为1
+# 2nd尾部维度：y为1，“要么其中一个是1”
+# 3rd尾部维度：x为2，y为3，不符合broadcasting要求！
+```
+
+### torch.mm()
+
+> 二维矩阵乘法
+>
+> `torch.mm(mat1, mat2, out=None)`
+
+![image-20220209233944605](assess/image-20220209233944605.png)
+
+### torch.bmm()
+
+> `torch.bmm(bmat1, bmat2, out=None)`
+
+![image-20220209234114886](assess/image-20220209234114886.png)
+
+### torch.matmul()
+
+> 多维矩阵操作,支持broadcast操作
+>
+> `torch.matmul(input, other, out=None)`
+
+### 
+
+### '@'运算符
+
+> @运算符作用类似于`torch.matmul()`，即叉（×）乘
+
+### torch.mul()
+
+>  **矩阵逐元素(Element-wise)乘法**，即点（·）乘，`torch.mul(mat1, other, out=None)`
+>
+> 两个矩阵shape相同，则对应元素相乘，元素不同则进行broadcast
+
+其中 other 乘数可以是标量，也可以是任意维度的矩阵， 只要满足最终相乘是可以broadcast的即可
+
+### '*'运算符
+
+> ##### '*'作用等价于`torch.mul()`
+
+### torch.mv()
+
+
+
+### torch.cat()
+
+> **连接给定维数的序列张量。**所有张量要么**具有相同的形状**(连接维度除外)，要么为空。
+
+```python
+t = torch.randn(2, 3)
+t1 = torch.randn(2, 3)
+print(t)
+print(t1)
+y=torch.cat((t, t1), 0)
+print(y)
+z=torch.cat((t, t1), 1)
+print(z)
+```
+
+<img src="assess/image-20220213203616204.png" alt="image-20220213203616204" style="zoom: 67%;" />
+
+### [None , …],[… , None]
+
+[None, …]表示在原始维度**前**补一维，维数为1
+
+[… , None ]表示在原始维度**后**补一维，维数为1
+
+```python
+x = torch.tensor([1, 2, 3])
+x,x.shape
+>>>tensor([1, 2, 3]), torch.Size([3])
+
+x = torch.tensor([1, 2, 3])[None, ...] 
+x,x.shape
+>>>tensor([[1, 2, 3]])
+	 torch.Size([1, 3])
+
+x1=torch.tensor([1, 2, 3])[...,None]
+x1,x1.shape
+>>>tensor([[1],
+        	 [2],
+           [3]])
+torch.Size([3, 1])
+```
+
+```python
+y=torch.tensor([[1,2,3],[4,5,6]])
+y,y.shape
+>>>tensor([[1, 2, 3],[4, 5, 6]]),torch.Size([2, 3])
+
+y2=torch.tensor([[1,2,3],[4,5,6]])[None, ...] 
+y2,y2.shape
+>>>tensor([[[1, 2, 3],[4, 5, 6]]]),torch.Size([1, 2, 3])
+
+y3=torch.tensor([[1,2,3],[4,5,6]])[...,None] 
+y3,y3.shape
+>>>tensor([[[1],
+         		[2],
+         		[3]],
+        	 [[4],
+            [5],
+            [6]]]),torch.Size([2, 3, 1])
+```
 
 torch.Tensor
 ---
@@ -23,6 +174,11 @@ torch.Tensor
 3. grad_fn：fn 表示 function 的意思，记录我么创建的创建张量时用到的方法，比如说加法、乘法，这个操作在求导过程需要用到，Tensor 的 Function，是自动求导的关键；
 4. requires_grad：指示是否需要梯度，有的不需要梯度；
 5. is_leaf：指示是否是叶子节点（张量）；
+
+### 张量中表示正负无穷
+
+float("Inf")或float("INF")表示为正无穷
+float("-Inf")或float("-INF")表示负无穷
 
 ### 张量中的元素获取
 
@@ -109,6 +265,37 @@ torch.addcmul()
 > torch.addcmul(input, value=1, tensor1, tensor2, out=None)
 
 ![image-20211118135913913](CodeNote.assets/image-20211118135913913.png)
+
+### 张量操作
+
+```python
+x = torch.rand(3,5)
+print(x)
+x1=x[:, [-1]]#返回最后一列的张量
+x2=x[:, -1]#将每一列最后一个元素合并为一个一维向量
+print(x1)
+print(x1.shape)
+print(x2)
+print(x2.shape)
+
+```
+
+![image-20220205230716751](assess/image-20220205230716751.png)
+
+#### '<'or'>'运算
+
+```python
+out = torch.rand(3,5)
+print(out)
+last_column=out[:, [-1]] #out的最后一列
+print(last_column)
+t=out < last_column #返回一个bool矩阵
+print(t)
+out[t] = -float('Inf')  #会将True位置的元素替换掉
+out
+```
+
+![image-20220205232714630](assess/image-20220205232714630.png)
 
 ### 自动求导机制
 
@@ -344,7 +531,7 @@ torch.Size([4, 1])
 
 #### torch.tril()
 
-> `torch.tril`(*input*, *diagonal=0*, *, *out=None*) ，将二维矩阵变成下三角矩阵。对角线参数控制要考虑的对角线。如果对角线 = 0，则保留主对角线上和主对角线以下的所有元素。正<u>值包括主对角线以上的对角线，负值同样也包括主对角线以下的对角线。</u>
+> `torch.tril`(*input*, *diagonal=0*, *, *out=None*) ，将二维矩阵变成**下三角矩阵**。对角线参数控制要考虑的对角线。如果对角线 = 0，则保留主对角线上和主对角线以下的所有元素。正<u>值包括主对角线以上的对角线，负值同样也包括主对角线以下的对角线。</u>
 
 ```python
 a = torch.randn(3, 3)
@@ -380,11 +567,154 @@ torch.tril(b, diagonal=-1)
 
 ```
 
+#### torch.triu()
+
+> `torch.triu`(*input*, *diagonal=0*, *, *out=None*)，将二维矩阵变成**上三角矩阵**。对角线参数控制要考虑的对角线。如果对角线 = 0，则保留主对角线上和主对角线以下的所有元素。正<u>值包括主对角线以上的对角线，负值同样也包括主对角线以下的对角线。</u>
+
+```python
+>>> a = torch.randn(3, 3)
+>>> a
+tensor([[ 0.2309,  0.5207,  2.0049],
+        [ 0.2072, -1.0680,  0.6602],
+        [ 0.3480, -0.5211, -0.4573]])
+>>> torch.triu(a)
+tensor([[ 0.2309,  0.5207,  2.0049],
+        [ 0.0000, -1.0680,  0.6602],
+        [ 0.0000,  0.0000, -0.4573]])
+>>> torch.triu(a, diagonal=1)
+tensor([[ 0.0000,  0.5207,  2.0049],
+        [ 0.0000,  0.0000,  0.6602],
+        [ 0.0000,  0.0000,  0.0000]])
+>>> torch.triu(a, diagonal=-1)
+tensor([[ 0.2309,  0.5207,  2.0049],
+        [ 0.2072, -1.0680,  0.6602],
+        [ 0.0000, -0.5211, -0.4573]])
+
+>>> b = torch.randn(4, 6)
+>>> b
+tensor([[ 0.5876, -0.0794, -1.8373,  0.6654,  0.2604,  1.5235],
+        [-0.2447,  0.9556, -1.2919,  1.3378, -0.1768, -1.0857],
+        [ 0.4333,  0.3146,  0.6576, -1.0432,  0.9348, -0.4410],
+        [-0.9888,  1.0679, -1.3337, -1.6556,  0.4798,  0.2830]])
+>>> torch.triu(b, diagonal=1)
+tensor([[ 0.0000, -0.0794, -1.8373,  0.6654,  0.2604,  1.5235],
+        [ 0.0000,  0.0000, -1.2919,  1.3378, -0.1768, -1.0857],
+        [ 0.0000,  0.0000,  0.0000, -1.0432,  0.9348, -0.4410],
+        [ 0.0000,  0.0000,  0.0000,  0.0000,  0.4798,  0.2830]])
+>>> torch.triu(b, diagonal=-1)
+tensor([[ 0.5876, -0.0794, -1.8373,  0.6654,  0.2604,  1.5235],
+        [-0.2447,  0.9556, -1.2919,  1.3378, -0.1768, -1.0857],
+        [ 0.0000,  0.3146,  0.6576, -1.0432,  0.9348, -0.4410],
+        [ 0.0000,  0.0000, -1.3337, -1.6556,  0.4798,  0.2830]])
+```
 
 
 
+#### torch.topk()
+
+> `torch.topk`(*input*, *k*, *dim=None*, *largest=True*, *sorted=True*, ***, *out=None*)
+>
+> 在给定维度上返回给定输入张量的**k个最大的元素**。**返回一个(values, indices)的命名元组**，
+>
+> valuses：返回最大的k个元素的tensor
+>
+> indices：获取到的元素在原数组中的位置标号
+
+- dim：如果dim没有给出，则选择输入的最后一个维度
+- largest：如果为False，则返回最小的k个最小的元素
+- sorted:是否返回最大或最小的元素，如果为True，将确保返回的k个元素本身是排序的
 
 
+
+```python
+x=torch.arange(1.,6.)
+print(x)
+values,indices=torch.topk(x,3)
+values,indices
+```
+
+![image-20220205213534850](assess/image-20220205213534850.png)
+
+#### torch.size()
+
+> 返回张量的维度
+
+```python
+t = torch.empty(3, 4, 5)
+t.size()#返回张量所有维度
+>>>torch.Size([3, 4, 5])
+t.size(dim=1)#返回张量第一维的维度
+>>>4
+t.size(-1)#返回张量最后一维的维度
+>>>5
+```
+
+#### torch.view()
+
+> 重构张量的维度，只适合对满足连续性条件的tensor，<u>不会改变原始的张量</u>
+
+**view只适合对满足连续性条件（contiguous）的tensor进行操作，而reshape同时还可以对不满足连续性条件的tensor进行操作，具有更好的鲁棒性。**view能干的reshape都能干，如果view不能干就可以用reshape来处理。
+
+```python
+x=torch.randn(2,3,5) 
+print(x.shape)
+print(x.view(-1).shape)#压缩至1维张量
+print(x.view(-1,5).shape)#压缩至2维张量
+```
+
+![image-20220211110337823](assess/image-20220211110337823.png)
+
+
+
+#### torch.reshape()
+
+> 重置张量维度，<u>不会改变原始的张量</u>
+
+```python
+x=torch.randn(2,3,4) 
+print(x)
+x.reshape(-1, x.size(-1))#将三维变成二维，合并前两维
+x.reshape(-1)#压缩至1维张量
+```
+
+<img src="assess/image-20220211111054790.png" alt="image-20220211111054790" style="zoom:67%;" />
+
+#### torch.item()
+
+> 返回只有一个元素张量的Python数字
+
+```python
+>>> x = torch.tensor([1.0])
+>>> x.item()
+1.0
+```
+
+#### torch.tolist()
+
+> 将tensor以嵌套list的形式返回，对于标量，返回一个标准的 Python 编号
+
+```python
+>>> a = torch.randn(2, 2)
+>>> a.tolist()
+[[0.012766935862600803, 0.5415473580360413],
+ [-0.08909505605697632, 0.7729271650314331]]
+>>> a[0,0].tolist()
+0.012766935862600803
+```
+
+
+
+#### torch.randn()
+
+> 随机返回
+
+```python
+x1=torch.randn(4)#数组
+x2=torch.randn(1,4) #矩阵
+x1,x1.shape,x2,x2.shape
+```
+
+![image-20220210100737215](assess/image-20220210100737215.png)
 
 torch.nn(nn)
 ---
@@ -493,8 +823,7 @@ class TestModule(nn.Module):
         self.layer2 = nn.Sequential(
             nn.Linear(32,10)
         )
- 
-    def forward(self,x):
+		def forward(self,x):
         x = self.layer1(x)
         x = self.layer2(x)
 
@@ -548,10 +877,6 @@ for name, module in model.named_children():
 #### `zero_grad`()
 
 > `zero_grad`(*set_to_none=False*),将所有模型的参数，将所有模型参数的梯度设置为零。
-
-
-
-
 
 #### `state_dict`()
 
@@ -639,7 +964,7 @@ model(data)
 >
 > nn.functional中定义了大量常用的函数,损失函数等。
 
-#### softmax
+#### softmax()
 
 > `torch.nn.functional.softmax(input, dim)`,对n维输入张量运用Softmax函数，将张量的每个元素缩放到（0,1）区间且和为1
 >
@@ -649,7 +974,41 @@ Softmax函数定义如下：
 
 ![img](CodeNote.assets/1446032-20190409103827224-1240655551.png)
 
-dim:指明维度，dim=0表示按列计算；dim=1表示按行计算。
+dim:指明维度，dim=0表示按列计算；dim=1表示按行计算；dim=-1,表示按照输入的最后一维。
+
+```python
+logits = torch.rand(2,2,3)
+print(logits)
+```
+
+![image-20220213160733737](assess/image-20220213160733737.png)
+
+dim=0，计算第一维中的概率分布，即`logits[0][j][k]+logits[1][j][k]+…+logits[i][j][k]=1`
+
+```python
+dim_0=F.softmax(logits,dim=0) 
+print(dim_0)
+```
+
+![image-20220213160923794](assess/image-20220213160923794.png)
+
+dim=1，计算第二维中的概率分布,即`logits[i][0][k]+logits[i][1][k]+…+logits[i][j][k]=1`
+
+```python
+dim_1=F.softmax(logits,dim=1)
+print(dim_1)
+```
+
+![image-20220213161224697](assess/image-20220213161224697.png)
+
+dim=2,计算第三维的概率分布,即`logits[i][j][0]+logits[i][j][1]+…+logits[i][j][k]=1`
+
+```python
+dim_ = F.softmax(logits,dim=-1) #等价于dim=2
+print(dim_)
+```
+
+![image-20220213161518146](assess/image-20220213161518146.png)
 
 #### one_hot()
 
@@ -680,6 +1039,42 @@ tensor([[[1, 0, 0],
         [[0, 1, 0],
          [0, 0, 1]]])
 ```
+
+#### cross_entropy()
+
+> 计算输入与目标之间的交叉熵损失。
+
+交叉熵的计算数学定义公式：
+
+![image-20220210232548597](assess/image-20220210232548597.png)
+
+交叉熵评估的是两个序列的距离。例如，在模型学习中，假设序列p是label，q是模型输出的特征序列，那模型想达到的效果是让这两个序列尽可能的拟合，相近。
+
+Pytorch中交叉熵的定义公式：
+
+![image-20220210234020311](assess/image-20220210234020311.png)
+
+具体计算公式为：
+
+![img](assess/v2-c63bf0c8bbb078faff7bee6cba28b4ee_b.png)
+
+ x为序列q中的每一个向量。将输入经过softmax激活函数之后，再计算其与target的交叉熵损失。等价于nn.logSoftmax()+nn.NLLLoss()
+
+nn.logSoftmax()公式如下：
+
+![img](assess/v2-c76a54f3afd01a9210326f4a6dd57f95_b.jpg)
+
+nn.NLLLoss()公式如下：
+
+![img](assess/v2-45d6699e08169b049ddeb1ebbf492706_b.png)
+
+
+
+
+
+
+
+
 
 
 
@@ -781,25 +1176,59 @@ output shape is %s torch.Size([1, 1])
 ### nn.embeding()
 
 > torch.nn.Embedding(`num_embeddings, embedding_dim`, padding_idx=None,max_norm=None, norm_type=2.0,   scale_grad_by_freq=False, sparse=False,  _weight=None)
+>
+> [参考博客]([通俗讲解pytorch中nn.Embedding原理及使用 - 简书 (jianshu.com)](https://www.jianshu.com/p/63e7acc5e890))
 
 - **num_embeddings (python:int)** – 词典的大小尺寸，比如总共出现5000个词，那就输入5000。此时index为（0-4999）
 - **embedding_dim (python:int)** – 嵌入向量的维度，即用多少维来表示一个符号。
 - padding_idx (python:int, optional) – 填充id，比如，输入长度为100，但是每次的句子长度并不一样，后面就需要用统一的数字填充，而这里就是指定这个数字，这样，网络在遇到填充id时，就不会计算其与其它符号的相关性。**（初始化为0）**
-- max_norm (python:float, optional) – 最大范数，如果嵌入向量的范数超过了这个界限，就要进行再归一化。
-- norm_type (python:float, optional) – 指定利用什么范数计算，并用于对比max_norm，默认为2范数。
+- max_norm (python:float, optional) – 最大范数，如果嵌入向量的范数超过了这个界限，就要**进行再归一化**。
+- norm_type (python:float, optional) – 指定利用什么范数计算，并用于对比max_norm，<u>默认为2范数</u>。
 - scale_grad_by_freq (boolean, optional) – 根据单词在mini-batch中出现的频率，对梯度进行放缩。默认为False.
 - sparse (bool, optional) – 若为True,则与权重矩阵相关的梯度转变为稀疏张量。
 
+这个模块通常用于存储单词嵌入并使用索引检索它们。模块的**输入是一个索引列表**，**输出是相应的单词嵌入**。
+
+输入：任意形状的int张量或long张量，包含要提取的指标，(*)
+
+输出：大小为**(*,H)**的张量,(\*)表示输入的形状,H为embedding_size
+
+
+
 ```python
 #建立词向量层
-embed = torch.nn.Embedding(n_vocabulary,embedding_size)
+embed = torch.nn.Embedding(n_vocabulary,embedding_size) #模型定义
+
+#使用
+#假设data.shape=(1,99),n_vocabulary=94,mbedding_size=256
+data
+>>>
+tensor([20, 20, 25, 20,  4, 17, 25,  5, 20, 20, 20, 20, 20, 25, 89,  7, 89, 89,
+        89, 89,  4, 20, 24,  4, 20,  4, 17, 25,  5, 89,  8, 89, 89, 89,  4,  6,
+        89,  9, 89, 89, 89, 89,  4, 19,  5, 89,  9,  5, 89, 89,  8,  5, 20,  4,
+        20,  5, 20,  5, 89,  7, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+        16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+        16, 16, 16, 16, 16, 16, 16, 16, 16])
+token_embeding=embed(data) #返回大小(1,99,256)
+>>>
+tensor([[[-0.0057,  0.0052,  0.0222,  ...,  0.0266, -0.0211,  0.0094],
+         [-0.0057,  0.0052,  0.0222,  ...,  0.0266, -0.0211,  0.0094],
+         [-0.0322,  0.0060, -0.0141,  ..., -0.0242, -0.0036,  0.0066],
+         ...,
+         [ 0.0177,  0.0267,  0.0072,  ..., -0.0237, -0.0014,  0.0081],
+         [ 0.0177,  0.0267,  0.0072,  ..., -0.0237, -0.0014,  0.0081],
+         [ 0.0177,  0.0267,  0.0072,  ..., -0.0237, -0.0014,  0.0081]]])
 ```
+
+
 
 ### nn.Parameter()
 
 这个函数理解为类型转换函数，将一个不可训练的类型`Tensor`转换成可以训练的类型`parameter`并将这个`parameter`绑定到这个`module`里面。从而在参数优化的时候可以进行优化
 
 ![img](assess/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI4NzUzMzcz,size_16,color_FFFFFF,t_70.png)
+
+
 
 ### nn.dropout()
 
@@ -809,7 +1238,7 @@ Dropout就是在不同的训练过程中随机扔掉一部分[神经元](https:/
 
 torch.nn.Dropout(p=0.5,inplace=False)
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20210209131758306.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80Mjk3OTE1Mg==,size_16,color_FFFFFF,t_70#pic_center)
+<img src="https://img-blog.csdnimg.cn/20210209131758306.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80Mjk3OTE1Mg==,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述" style="zoom: 50%;" />
 
 ### nn.Sequential()
 
@@ -917,7 +1346,7 @@ torch.zeros()
 torch.zeros(1,100,256)#生成[1,100,256]的全0张量
 ```
 
-
+`torch.``topk`(*input*, *k*, *dim=None*, *largest=True*, *sorted=True*, ***, *out=None*)
 
 torch.optim(optim)
 ---
@@ -934,7 +1363,7 @@ torch.optim.Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 ```
 
-### torch.cuda()
+## torch.cuda()
 
 ```python
 torch.cuda.is_available() #查看是否有可用的GPU
@@ -948,16 +1377,125 @@ torch.cuda.empty_cache() #清空程序占用的GPU资源
 torch.cuda.manual_seed(seed), torch.cuda.manual_seed_all(seed)
 ```
 
-torch.save()
-
-> 模型保存函数
->
-> 
-
 
 
 数据读取机制
 ---
+
+Pytorch中数据加载数据的顺序：
+
+- 创建一个dataset对象
+- 创建一个dataloader对象
+- 循环dataloader对象，将data,label拿到模型中去训练
+
+
+
+### Dataset()
+
+> `torch.utils.data.Dataset()`: Dataset 抽象类， 所有自定义的 Dataset 都需要继承它，并且必须复写 `__getitem__()` 和`__len__()`这个类方法。
+
+- `__len__(self)` 定义当被`len()`函数调用时的行为（返回容器中元素的个数）
+- `__getitem__(self)`定义获取容器中指定元素的行为，相当于`self[key]`，即允许类对象可以有索引操作。
+
+- 如果你希望定制的容器是**不可变**的话，你只需要定义`__len__()`和`__getitem__`这两个魔法方法。
+- 如果你希望定制的容器是**可变**的话，除了`__len__()`和`__getitem__`这两个魔法方法，还需要定义`__setitem__()`和`__delitem__()`两个方法。
+
+```python
+import math
+import torch
+from torch.utils.data import Dataset
+from utils import SmilesEnumerator
+import numpy as np
+import re
+"""
+代码来自molgpt
+Smiles分子的数据类，基类为torch.utils.data.Dataset
+需要重写__len__和__getitem__这两个方法
+__len__方法返回数据的长度
+__getitem__定义获取容器中指定元素的行为，相当于self[key]，即允许类对象可以有索引操作。
+"""
+
+class SmileDataset(Dataset):
+
+    def __init__(self, args, data, content, block_size, aug_prob = 0.5, prop = None, scaffold = None, scaffold_maxlen = None):
+        """
+        arg:参数
+        data:填充过后的SMILES
+        content:为词汇表
+        block_size：maxlen最大的SMILES长度
+        aug_prob:train:0
+        prop:条件生成属性list
+        scaffold:分子骨架
+        scaffold_maxlen:分子骨架的最大长度
+        """
+        chars = sorted(list(set(content))) #词汇表list
+        data_size, vocab_size = len(data), len(chars)
+        print('data has %d smiles, %d unique characters.' % (data_size, vocab_size))
+    
+        self.stoi = { ch:i for i,ch in enumerate(chars) }
+        self.itos = { i:ch for i,ch in enumerate(chars) }
+        self.max_len = block_size
+        self.vocab_size = vocab_size
+        self.data = data
+        self.prop = prop
+        self.sca = scaffold
+        self.scaf_max_len = scaffold_maxlen
+        self.debug = args.debug #???
+        self.tfm = SmilesEnumerator() #数据枚举器,进行SMILES分子数据增强
+        self.aug_prob = aug_prob #aug_prob=0,,默认为0.5
+    
+    def __len__(self):
+        #返回训练数据量
+        if self.debug:
+            return math.ceil(len(self.data) / (self.max_len + 1))
+        else:
+            return len(self.data)
+
+    def __getitem__(self, idx):
+      """返回一条训练数据，并将其转换为tensor"""
+        smiles, prop, scaffold = self.data[idx], self.prop[idx], self.sca[idx]    # self.prop.iloc[idx, :].values  --> if multiple properties
+        smiles = smiles.strip()#剔除分子空格和换行符
+        scaffold = scaffold.strip()#剔除骨架空格和换行符
+
+        p = np.random.uniform() #返回[0,1)之间的随机值
+        if p < self.aug_prob:
+            smiles = self.tfm.randomize_smiles(smiles) #返回smiles的随机分子表示
+
+        pattern =  "(\[[^\]]+]|<|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\(|\)|\.|=|#|-|\+|\\\\|\/|:|~|@|\?|>|\*|\$|\%[0-9]{2}|[0-9])"
+        regex = re.compile(pattern)
+        smiles += str('<')*(self.max_len - len(regex.findall(smiles))) #
+
+        if len(regex.findall(smiles)) > self.max_len:
+            smiles = smiles[:self.max_len]
+
+        smiles=regex.findall(smiles) #将SMILES字符串切割成字符list
+
+        scaffold += str('<')*(self.scaf_max_len - len(regex.findall(scaffold)))
+        
+        if len(regex.findall(scaffold)) > self.scaf_max_len:
+            scaffold = scaffold[:self.scaf_max_len]
+
+        scaffold=regex.findall(scaffold)
+
+        dix =  [self.stoi[s] for s in smiles] #SMILES分子字符对应的编号
+        sca_dix = [self.stoi[s] for s in scaffold] #骨架字符对应的编号
+        sca_tensor = torch.tensor(sca_dix, dtype=torch.long)
+
+        """
+        x:开始到倒数第二个字符的张量
+        y:第二个字符到最后一个字符的张量
+        example：
+        dix=[0, 1, 2, 3, 4, 5]
+        x=tensor([0, 1, 2, 3, 4])
+        y=tensor([1, 2, 3, 4, 5])
+        """
+        x = torch.tensor(dix[:-1], dtype=torch.long)
+        y = torch.tensor(dix[1:], dtype=torch.long)
+        # prop = torch.tensor([prop], dtype=torch.long)
+        prop = torch.tensor([prop], dtype = torch.float)
+        return x, y, prop, sca_tensor
+
+```
 
 ### DataLoader()
 
@@ -973,11 +1511,12 @@ DataLoader(dataset, batch_size=1, shuffle=False, sampler=None,
 
 DataLoader 的参数很多，但我们常用的主要有 5 个：
 
-- dataset: Dataset 类， 决定数据从哪读取以及如何读取
-- bathsize: 批大小
-- num_works: 是否多进程读取机制
-- shuffle: 每个 epoch 是否乱序
+- dataset: Dataset类， 决定数据从哪读取以及如何读取
+- bathsize: int,批大小
+- num_works: int,多进程读取机制
+- shuffle: bool,每个 epoch 是否乱序，先打乱数据再去batch
 - `drop_last`: 当样本数不能被 batchsize 整除时， 是否舍弃最后一批数据
+- pin_memory:bool，如果为True，则数据加载器将在返回张量之前将它们复制到CUDA固定内存中。如果数据元素是自定义类型，或者collate_fn返回一个自定义类型的批处理。
 
 > Epoch， Iteration 和 Batchsize 的概念
 
@@ -985,9 +1524,27 @@ DataLoader 的参数很多，但我们常用的主要有 5 个：
 - Iteration：一批样本输入到模型中，称为一个 Iteration
 - Batchsize：批大小，决定一个 Epoch 有多少个 Iteration
 
-### Dataset()
+#### 常见报错
 
-> `torch.utils.data.Dataset()`: Dataset 抽象类， 所有自定义的 Dataset 都需要继承它，并且必须复写 `__getitem__()` 这个类方法。
+ValueError: num_samples should be a positive integer value, but got num_samples=0
+
+说在随机shuffle之后取不到数据，取到的数据数量为0.
+
+```python
+loader = DataLoader(data, shuffle=True, pin_memory=True,
+                                batch_size=config.batch_size,
+                                num_workers=config.num_workers)
+```
+
+可以尝试将shuffle改为False
+
+
+
+
+
+
+
+
 
 mdoel.train(),model.eval()
 ---
@@ -1006,6 +1563,159 @@ model.train()和model.eval()的区别主要在于Batch Normalization和Dropout�
 如果模型中有BN层(Batch Normalization）和Dropout，在测试时添加model.eval()。m**odel.eval()是保证BN层能够用全部训练数据的均值和方差，即测试过程中要保证BN层的均值和方差不变。**对于Dropout，model.eval()是<u>利用到了所有网络连接</u>，即不进行随机舍弃神经元。
 
 训练完train样本后，生成的模型model要用来测试样本。在model(test)之前，需要加上`model.eval()`，否则的话，有输入数据，即使不训练，它也会改变权值。这是model中含有BN层和Dropout所带来的的性质。
+
+模型保存
+---
+
+### torch.save()
+
+> 保存模型参数
+>
+> `torch.save`(*obj*, *f*, *pickle_module=pickle*, *pickle_protocol=DEFAULT_PROTOCOL*, *_use_new_zipfile_serialization=True*)
+
+一般只使用前面两个参数
+
+obj:保存对象，一般为参数字典
+
+f:保存模型的路径及文件名
+
+```python
+ def save_checkpoint(self):
+    # DataParallel wrappers keep raw model object in .module attribute
+    # DataParallel包装器将原始模型对象保存在.module属性中
+    raw_model = self.model.module if hasattr(self.model, "module") else self.model
+    logger.info("saving %s", self.config.ckpt_path)
+    torch.save(raw_model.state_dict(), self.config.ckpt_path) #保存模型参数
+```
+
+torch.cuda
+---
+
+### amp
+
+> torch.cuda.amp提供了可以使用混合精度的训练机制，以加速训练。
+
+下面两个函数结合使用
+
+#### GradScaler
+
+> **在模型中以16位精度存储所有变量/数字可以改善并修复大部分这些问题，比如显著减少模型的内存消耗，加速训练循环，同时仍然保持模型的性能/精度。**
+
+```python
+from torch.cuda.amp import GradScaler
+scaler = torch.cuda.amp.GradScaler() #创建一个梯度缩放标量，以最大程度避免使用fp16进行运算时的梯度下溢。
+```
+
+#### aotucast
+
+> `autocast`可以作为 Python 上下文管理器和装饰器来使用，用来指定脚本中某个区域、或者某些函数，按照自动混合精度来运行。
+
+```python
+import torch.cuda.amp.autocast as aotucast
+```
+
+```python
+def run_epoch(split):
+            is_train = split == 'train' #bool类型
+            model.train(is_train)
+            data = self.train_dataset if is_train else self.test_dataset
+            loader = DataLoader(data, shuffle=True, pin_memory=True,
+                                batch_size=config.batch_size,
+                                num_workers=config.num_workers)
+
+            losses = []
+            #pbar即progress bar,如果是训练过程则需要进度条
+            pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
+            for it, (x, y, p, scaffold) in pbar:
+                # it是索引
+                #x, y, p, scaffold对应于Dataset()中__getitem__()方法的返回值
+                # place data on the correct device
+                x = x.to(self.device)
+                y = y.to(self.device)
+                p = p.to(self.device)
+                scaffold = scaffold.to(self.device) 
+
+                # forward the model
+                #模型中的前向传播,(model + loss)开启 autocast
+                with torch.cuda.amp.autocast():
+                    with torch.set_grad_enabled(is_train):
+                        logits, loss, _ = model(x, y, p, scaffold)
+                        loss = loss.mean() 
+                        losses.append(loss.item())
+
+                
+                #反向传播并更新参数,反向传播需要在autocast上下文之外
+                # backprop and update the parameters
+                model.zero_grad()#将模型参数清零
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
+                scaler.step(optimizer)
+                scaler.update()
+
+ 
+```
+
+torch.set_grad_enabled(bool)
+---
+
+> 在使用的时候是设置一个上下文环境，with包裹下的所有的计算出的**新的变量**的`required_grad` 置为`False`,但原有的变量required_grad不会改变。这实际上也就是影响了网络的自动求导机制。计算出的新变量将不会求导。
+>
+> 等于`@torch.no_grad()`#表示下方方法中数据不需要计算梯度
+
+```python
+with torch.set_grad_enabled(is_train):
+    logits, loss, _ = model(x, y, p, scaffold)
+    loss = loss.mean() 
+    losses.append(loss.item())
+@torch.no_grad()#表示下方方法中数据不需要计算梯度
+def func():
+   logits, loss, _ = model(x, y, p, scaffold)
+    loss = loss.mean() 
+    losses.append(loss.item())
+  
+```
+
+torch.multinomial()
+---
+
+> `torch.multinomial`(*input*, *num_samples*, *replacement=False*, ***, *generator=None*, *out=None*) → LongTensor
+
+**输入行不需要求和为1**(在这种情况下，使用值作为权重) ，但必须是非负的、有限的和非零和。
+
+如果输入是vector，则输出是大小为**n_samples**的vector
+
+如果输入是m行的张量或矩阵则返回的矩阵大小为**（m,n_sample）**
+
+矩阵或者张量只能是1维或2维，三维及以上会报错
+
+![image-20220213172847130](assess/image-20220213172847130.png)
+
+iunput:输入的张量或矩阵
+
+num_samples：每行的取值次数，该值不能大于每一行的元素数，否则会报错。
+
+replacement：布尔值表示取样时有无放回，True是有放回，False无放回。
+
+generator:自定义的一种用于采样的伪随机数发生器，一般没有
+
+函数作用：对input中的<u>每一行</u>做**n_samples次取值**，每一次取值时的**输出张量是input当前行对应元素的下标。**
+
+取样原则：**input可以看成一个权重张量**，<u>每一个元素的值代表其在该行中的权重。</u>如果有<u>元素为0，那么在其他不为0的元素被取完之前，该元素不会被取到。</u>
+
+```
+weights = torch.tensor([
+         [0.3742, 0.2991, 0.3268],
+         [0.3011, 0.2853, 0.4136],
+         [0.3118, 0.3888, 0.2994],
+         [0.3698, 0.2524, 0.3779] ]) # create a tensor of weights
+print(weights)
+x=torch.multinomial(weights, 1)
+y=torch.multinomial(weights, 4, replacement=True)
+x,y
+```
+
+<img src="assess/image-20220213184417077.png" alt="image-20220213184417077" style="zoom:67%;" />
 
 # numpy
 
@@ -1136,6 +1846,26 @@ a,b,c
  matrix([[1, 2, 2, 3, 3, 4]]),
  array([1, 2, 2, 3, 3, 4]))
 ```
+
+np.round()
+---
+
+> 四舍五入为给定的小数位数
+>
+> `np.round(x,decimals=0)`
+
+decimals:要四舍五入的小数位
+
+**np.round当遇到0.5取整时，是向偶数方向取整。**
+
+```
+a=np.round(60.5)
+b=np.round(103.5)
+c=np.round(182.36,1)
+a,b,c
+```
+
+![image-20220214175153799](assess/image-20220214175153799.png)
 
 random.uniform()
 ---
@@ -1487,70 +2217,75 @@ pandas
 read_csv()
 ---
 
-> 读取CSV文件
+> 读取CSV文件，返回的对象是`DataFrame`
 
-filepath_or_buffer : 路径 URL 可以是http, ftp, s3, 和 file.
+- filepath_or_buffer : 路径 URL 可以是http, ftp, s3, 和 file.
 
-`sep:` 指定分割符，默认是’,’，引擎不能自动检测分隔符，但Python解析引擎可以
+- `sep:` 指定分割符，默认是’,’，引擎不能自动检测分隔符，但Python解析引擎可以
 
-`delimiter:` 同sep
+- `delimiter:` 同sep
 
-delimiter_whitespace: True or False 默认False, 用空格作为分隔符等价于spe=’\s+’如果该参数被调用，则delimite不会起作用
+- delimiter_whitespace: True or False 默认False, 用空格作为分隔符等价于spe=’\s+’如果该参数被调用，则delimite不会起作用
 
-header: 指定第几行作为列名(忽略注解行)，如果没有指定列名，默认header=0; 如果指定了列名header=None
+- header: 指定第几行作为列名(忽略注解行)，如果没有指定列名，默认header=0; 如果指定了列名header=None
 
-`names 指定列名`，如果文件中不包含header的行，应该显性表示header=None
+- `names 指定列名`，如果文件中不包含header的行，应该显性表示header=None
 
-index_col: 默认为None 用列名作为DataFrame的行标签，如果给出序列，则使用MultiIndex。如果读取某文件,该文件每行末尾都有带分隔符，考虑使用index_col=False使panadas不用第一列作为行的名称。
+- index_col: 默认为None 用列名作为DataFrame的行标签，如果给出序列，则使用MultiIndex。如果读取某文件,该文件每行末尾都有带分隔符，考虑使用index_col=False使panadas不用第一列作为行的名称。
 
-usecols： 默认None 可以使用列序列也可以使用列名，如 [0, 1, 2] or [‘foo’, ‘bar’, ‘baz’]，选取的列
+- usecols： 默认None 可以使用列序列也可以使用列名，如 [0, 1, 2] or [‘foo’, ‘bar’, ‘baz’]，选取的列
 
-as_recarray：默认False , 将读入的数据按照numpy array的方式存储，0.19.0版本后使用 pd.read_csv(…).to_records()。 注意，这种方式读入的na数据不是显示na,而是给以个莫名奇妙的值
+- as_recarray：默认False , 将读入的数据按照numpy array的方式存储，0.19.0版本后使用 pd.read_csv(…).to_records()。 注意，这种方式读入的na数据不是显示na,而是给以个莫名奇妙的值
 
-squeeze: 默认为False, True的情况下返回的类型为Series
+- squeeze: 默认为False, True的情况下返回的类型为Series
 
-prefix:默认为none, 当header =None 或者没有header的时候有效，例如’x’ 列名效果 X0, X1, …
+- prefix:默认为none, 当header =None 或者没有header的时候有效，例如’x’ 列名效果 X0, X1, …
 
-mangle_dupe_cols ：默认为True,重复的列将被指定为’X.0’…’X.N’，而不是’X’…’X’。如果传入False，当列中存在重复名称，则会导致数据被覆盖。
+- mangle_dupe_cols ：默认为True,重复的列将被指定为’X.0’…’X.N’，而不是’X’…’X’。如果传入False，当列中存在重复名称，则会导致数据被覆盖。
 
-dtype: E.g. {‘a’: np.float64, ‘b’: np.int32} 指定数据类型
+- dtype: E.g. {‘a’: np.float64, ‘b’: np.int32} 指定数据类型
 
-engine: {‘c’, ‘python’}, optional 选择读取的引擎目前来说C更快，但是Python的引擎有更多选择的操作
+- engine: {‘c’, ‘python’}, optional 选择读取的引擎目前来说C更快，但是Python的引擎有更多选择的操作
 
-skipinitialspace: 忽略分隔符后的空格,默认false,
+- skipinitialspace: 忽略分隔符后的空格,默认false,
 
-skiprows: list-like or integer or callable, default None 忽略某几行或者从开始算起的几行
+- skiprows: list-like or integer or callable, default None 忽略某几行或者从开始算起的几行
 
-skipfooter: 从底端算起的几行，不支持C引擎
+- skipfooter: 从底端算起的几行，不支持C引擎
 
-nrows： int 读取的行数
+- nrows： int 读取的行数
 
-na_values: 默认None NaN包含哪些情况，默认情况下, ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘N/A’, ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’. 都表现为NAN
+- na_values: 默认None NaN包含哪些情况，默认情况下, ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘N/A’, ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’. 都表现为NAN
 
-keep_default_na: 如果na_values被定义,keep_default_na为False那么默认的NAN会被改写。 默认为True
+- keep_default_na: 如果na_values被定义,keep_default_na为False那么默认的NAN会被改写。 默认为True
 
-na_filter: 默认为True, 针对没有NA的文件，使用na_filter=false能够提高读取效率
+- na_filter: 默认为True, 针对没有NA的文件，使用na_filter=false能够提高读取效率
 
-skip_blank_lines 默认为True,跳过blank lines 而且不是定义为NAN
+- skip_blank_lines 默认为True,跳过blank lines 而且不是定义为NAN
 
-thousands 千分位符号，默认‘，’
+- thousands 千分位符号，默认‘，’
 
-decimal 小数点符号，默认‘.’
+- decimal 小数点符号，默认‘.’
 
-encoding: 编码方式
+- encoding: 编码方式
 
-memory_map如果为filepath_or_buffer提供了文件路径，则将文件对象直接映射到内存上，并直接从那里访问数据。使用此选项可以提高性能，因为不再有任何I / O开销。
+- memory_map如果为filepath_or_buffer提供了文件路径，则将文件对象直接映射到内存上，并直接从那里访问数据。使用此选项可以提高性能，因为不再有任何I / O开销。
 
-low_memory 默认为True 在块内部处理文件，导致分析时内存使用量降低，但可能数据类型混乱。要确保没有混合类型设置为False，或者使用dtype参数指定类型。请注意，不管怎样，整个文件都读入单个DataFrame中，请使用chunksize或iterator参数以块形式返回数据。 （仅在C语法分析器中有效）
+- low_memory 默认为True 在块内部处理文件，导致分析时内存使用量降低，但可能数据类型混乱。要确保没有混合类型设置为False，或者使用dtype参数指定类型。请注意，不管怎样，整个文件都读入单个DataFrame中，请使用chunksize或iterator参数以块形式返回数据。 （仅在C语法分析器中有效）
+
+
+```python
+data = pd.read_csv('datasets/moses3.csv')
+```
 
 dropna
 ---
 
-> DataFrme.dropna(axis=0,how=’any’,thresh=None,subset=None,inplace=False)
+> DataFrme.dropna(axis=0,how=’any’,thresh=None,subset=None,inplace=False) 删除为None的值
 
 参数：
 axis: 默认axis=0。0为按行删除,1为按列删除
-how: 默认 ‘any’。 ‘any’指带缺失值的所有行/列;'all’指清除一整行/列都是缺失值的行/列
+how: 默认 ‘any’。 **‘any’指带缺失值的所有行/列**;'all’指清除<u>一整行/列都是</u>缺失值的行/列
 thresh: int,保留含有int个非nan值的行
 subset: 删除特定列中包含缺失值的行或列
 inplace: 默认False，即筛选后的数据存为副本,True表示直接在原数据上更改
@@ -1637,6 +2372,129 @@ df_new04
 
 ![img](assess/v2-f6c3dc5b3f0f8cd6501e789efed1527f_1440w.jpg)
 
+sample()
+---
+
+> pandas中自带的取样函数
+>
+> DataFrame.sample(n=None,frac=None,replace=False,weights=None,random_state=None,axis=None)
+
+<img src="assess/d000baa1cd11728b239380cf85241fc9c1fd2c84.jpeg" alt="img" style="zoom: 80%;" />
+
+```python
+data = pd.read_csv('datasets/moses3.csv')  # 读入数据集,返回的是DataFrame对象
+data = data.dropna(axis=0).reset_index(drop=True)    
+data = data.sample(frac = 0.1).reset_index(drop=True)
+```
+
+apply()
+---
+
+> DataFrame.apply(func, axis=0, raw=False, result_type=None, args=(), **kwargs) ，会改变原数据
+
+func：函数应用于每一列或每一行。自己定义
+
+axis：**{0 or ‘index’, 1 or ‘columns’}**,0则运用到每一列，1运用到每一行
+
+raw:确定行或列是否作为**Series**或**ndarray**对象传递。
+
+- Fasle:将每一行或每一列作为Series传递给函数。
+- 传递的函数将接收ndarray对象。如果你只是应用NumPy减少函数，这将获得更好的性能。
+- 无论`axis=0`还是`axis=1`，其传入指定函数的默认形式均为`Series`
+
+result_type:**{‘expand’, ‘reduce’, ‘broadcast’, None}**仅在axis=1(columns)时起作用
+
+- 如果apply函数返回一个**Series**，这些将被扩展为列。
+
+args:<u>除了数组/序列外</u>，要传递给func的位置参数。
+
+**kwargs:作为关键字参数传递给func的其他关键字参数。
+
+![img](assess/v2-656d29d7df031238286e085bfa50293b_1440w.jpg)
+
+```python
+def apply_age(x,bias):
+    return x+bias
+
+#以元组的方式传入额外的参数
+data["age"] = data["age"].apply(apply_age,args=(-3,)) #bias=-3
+```
+
+![img](assess/v2-02953f865dcb6245f9482bf15855a013_1440w.jpg)
+
+```python
+# 沿着0轴求和
+data[["height","weight","age"]].apply(np.sum, axis=0)
+```
+
+<img src="assess/v2-3e7aa714ac4478c6b4b7da0b4dd3746e_1440w.jpg" alt="img" style="zoom:67%;" />
+
+```python
+def BMI(series):
+    weight = series["weight"]
+    height = series["height"]/100
+    BMI = weight/height**2
+    return BMI
+
+data["BMI"] = data.apply(BMI,axis=1)
+```
+
+<img src="assess/v2-98f8b09e26abe17e850ed125950fecdf_1440w.jpg" alt="img" style="zoom: 67%;" />
+
+当使用apply函数进行增加新列时，如果想要将结果保存到文件中需要另外操作
+
+```python
+def smiles(x):
+    x = x.strip()
+    try:
+        smi=sf.encoder(x)
+    except:
+        sf.set_semantic_constraints()
+        smi = sf.encoder(x)
+        sf.set_semantic_constraints('hypervalent')
+        return smi
+    return smi
+data = pd.read_csv('datasets/moses3.csv') 
+data['selfies'] = data.apply(lambda x: smiles(x['smiles']),axis=1)
+data.to_csv('datasets/moses3.csv')#结果另外保存，否则原数据集不会改变
+```
+
+map()
+---
+
+> 常用于数据替换，`map`方法都是把对应的数据**逐个当作参数**传入到字典或函数中，得到映射后的值。
+
+![img](assess/v2-656d29d7df031238286e085bfa50293b_1440w-16451882171844.jpg)
+
+把数据集中`gender`列的男替换为1，女替换为0
+
+```python
+#①使用字典进行映射
+data["gender"] = data["gender"].map({"男":1, "女":0})
+
+#②使用函数
+def gender_map(x):
+    gender = 1 if x == "男" else 0
+    return gender
+#注意这里传入的是函数名，不带括号
+data["gender"] = data["gender"].map(gender_map)
+```
+
+applymap()
+---
+
+> 对`DataFrame`中的**每个单元格**执行指定函数的操作
+
+![img](assess/v2-a3bb9abd38a47f7c17e56f677464f8d1_1440w.jpg)
+
+将`DataFrame`中所有的值保留两位小数显示
+
+```python
+df.applymap(lambda x:"%.2f" % x)
+```
+
+![img](assess/v2-d90bd5f9a7bdbbf811063df36c9b3720_1440w.jpg)
+
 argparse
 ===
 
@@ -1705,6 +2563,18 @@ for i in tqdm(range(1000)):
 
 ![img](assess/53cde83d3ed5b22a59c106e082c204b5.gif)
 
+tqdm与Dataloader结合使用
+---
+
+```python
+loader = DataLoader(data, shuffle=True, pin_memory=True,
+                                batch_size=config.batch_size,
+                                num_workers=config.num_workers)
+pbar = tqdm(enumerate(loader), total=len(loader))
+```
+
+
+
 
 
 re
@@ -1724,6 +2594,22 @@ rst=re.sub(pat,'',string)
 rst1=re.sub(pat1,'',rst)
 ```
 
+findall()
+---
+
+> 与compile返回的对象配合使用，返回一个list列表
+
+```python
+import re
+pattern =  "(\[[^\]]+]|<|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\(|\)|\.|=|#|-|\+|\\\\|\/|:|~|@|\?|>|\*|\$|\%[0-9]{2}|[0-9])"
+regex = re.compile(pattern)
+regex.findall(smiles)
+```
+
+![image-20220205203122955](assess/image-20220205203122955.png)
+
+
+
 RDkit
 ===
 
@@ -1742,13 +2628,13 @@ m = Chem.MolFromSmiles(smiles) #SMILES转mol
 
 如果SMILES是不合法的讲返回None，并返回错误信息
 
-```
+```python
 m1 = Chem.MolFromSmiles('CO(C)C')
 ```
 
 ![image-20220202223222310](assess/image-20220202223222310.png)
 
-```
+```python
 m2 = Chem.MolFromSmiles('c1cc1')
 ```
 
@@ -1844,11 +2730,11 @@ TypeError: 'ForwardSDMolSupplier' object does not support indexing
 
 > 将mol类型的分子转变成SMILES
 >
-> **MolToSmiles(mol, isomericSmiles, kekuleSmiles, canonical, ...)**，需要注意的是 SMILES 提供的是标准的，所以**不管一个特定的分子如何输入，输出应该是相同的**
+> **MolToSmiles(mol, isomericSmiles, kekuleSmiles, canonical, ...)**，需要注意的是 SMILES 提供的是<u>标准</u>的，所以**不管一个特定的分子如何输入，输出应该是相同的**
 
 - kekuleSmiles：默认False，不使用kekule时：脂肪族碳用"C"表示（大写），芳香族用"c"表示（小写）
 - isomericSmiles：默认True，区分同分异构体（**"@"表示手性，"\\"和"/"表示顺反异构**）
-- canonical：默认True，输出标准SMILES
+- canonical：默认True，**输出标准SMILES**
 
 ```python
 >>> m = Chem.MolFromMolFile('data/chiral.mol')
@@ -1908,9 +2794,23 @@ mol.GetNumAtoms()
 
 > 返回原子列表
 
+
+
 ### GetAtomicNum()
 
 > 返回原子在元素周期表的序号
+
+```python
+m = Chem.MolFromSmiles('C1OC1')
+for atom in m.GetAtoms():
+  print(atom.GetAtomicNum())
+>>>
+6
+8
+9
+```
+
+
 
 ### GetBonds()
 
@@ -1932,19 +2832,493 @@ mol.GetNumAtoms()
 SINGLE
 ```
 
+### GetIdx()
+
+> 返回原子的index
+
 ### GetAtomWithIdx()
 
 > 返回对应index的原子，GetAtomWithIdx(index)
 
 ### GetSymbol()
 
-> 返回原子的类型
+> 返回原子的符号
+
+```python
+mol=Chem.MolFromSmiles('[N-]=[N+]=N[IH2]1OC(=O)c2ccccc21')
+for atom in mol.GetAtoms():
+    print(mol.GetAtomWithIdx(atom.GetIdx()).GetSymbol(),end=' ')
+    #     print(atom.GetSymbol()) #等价于
+mol       
+```
+
+![image-20220216234239466](assess/image-20220216234239466.png)
+
+### RenumberAtoms()
+
+> 给原子重新编号
+
+```python
+    def randomize_smiles(smiles):
+        """
+        Perform a randomization of a SMILES string must be RDKit sanitizable
+        将合法的SMILES分子随机化
+        """
+        m = Chem.MolFromSmiles(smiles) #SMILES转mol
+        ans = list(range(m.GetNumAtoms()))
+        np.random.shuffle(ans)#打乱序列
+        nm = Chem.RenumberAtoms(m,ans)#对原子重新编号
+        return Chem.MolToSmiles(nm, canonical=False, isomericSmiles=True)
+```
+
+### SanitizeMol()
+
+> 计算凯库勒式、检查化合价、芳香性、共轭及杂化，用于判断分子的合法性
+
+```python
+###代码来自from moses.utils import get_mol
+"""判断分子是否合法，并返回的是分子的mol形式"""
+def get_mol(smiles_or_mol):
+    '''
+    Loads SMILES/molecule into RDKit's object
+    '''
+    if isinstance(smiles_or_mol, str):
+        if len(smiles_or_mol) == 0:
+            return None
+        mol = Chem.MolFromSmiles(smiles_or_mol)
+        if mol is None:
+            return None
+        try:
+            Chem.SanitizeMol(mol) 
+        except ValueError:
+            return None
+        return mol
+    return smiles_or_mol
+```
+
+
+
+```python
+"""返回标准的SMILES分子"""
+def canonic_smiles(smiles_or_mol):
+    mol = get_mol(smiles_or_mol)
+    if mol is None:
+        return None
+    return Chem.MolToSmiles(mol)
+```
+
+### Chem.CanonSmiles()
+
+> 将分子转换为标准分子
+
+Chem.CanonSmiles(smiles)
+
+检查分子生成的新颖性
+---
+
+```python
+def check_novelty(gen_smiles, train_smiles): # gen: say 788, train: 120803
+    """gen_smiles:标准分子的list集,train_smiles:训练分子的集合"""
+    if len(gen_smiles) == 0:
+        novel_ratio = 0.
+    else:
+        duplicates = [1 for mol in gen_smiles if mol in train_smiles]  # [1]*45,生成的分子在训练分子中则标记1
+        novel = len(gen_smiles) - sum(duplicates)  # 788-45=743
+        novel_ratio = novel*100./len(gen_smiles)  # 743*100/788=94.289
+    print("novelty: {:.3f}%".format(novel_ratio))
+    return novel_ratio
+```
+
+selfies
+===
+
+> 一种具有100%鲁棒性的分子表示
+
+```python
+#安装 pip install selfies
+import selfies as sf
+```
+
+encoder(),decoder()
+---
+
+> `encoder(SMILES,print_error=False)`将SMILES表示的分子转换为SELFIES表示，返回str类型，不会检查SMILES分子是否有效，因此在使用前必须使用RDkit检查SMILES分子是否有效
+>
+> `decoder(SELFIES,print_error=False)`将SELFIES分子表示转换为SMILES分子表示，但**不是标准SMILES分子**，返回str类型。
+>
+> <u>将仅生成遵循字典指定的绑定约束的 SMILES</u>
+
+标准用法，将其放到try中防止报错
+
+```
+original_smiles = "O=Cc1ccccc1"  # benzaldehyde
+
+try:
+
+    encoded_selfies = sf.encoder(original_smiles)  # SMILES  -> SELFIES
+    decoded_smiles = sf.decoder(encoded_selfies)   # SELFIES -> SMILES
+
+except sf.EncoderError as err:
+    pass  # sf.encoder error...
+except sf.DecoderError as err:
+    pass  # sf.decoder error...
+```
+
+```python
+sf.encoder("CNC(C)CC1=CC=C2C(=C1)OCO2")
+```
+
+![image-20220215110750906](assess/image-20220215110750906.png)
+
+不同的SMILES分子表示会返回不同的SELFIES分子表示
+
+```python
+smiles = "CN1C(=O)C2=C(c3cc4c(s3)-c3sc(-c5ncc(C#N)s5)cc3C43OCCO3)N(C)C(=O)C2=C1c1cc2c(s1)-c1sc(-c3ncc(C#N)s3)cc1C21OCCO1"
+ran=randomize_smiles(smiles) #返回SMILES分子的随机表示
+s1=sf.encoder(smiles)
+s2=sf.encoder(ran)
+print(s1)
+print("...")
+print(s2)
+```
+
+<img src="assess/image-20220215113327694.png" alt="image-20220215113327694" style="zoom: 67%;" />
+
+不同的**SELFIES分子**表示返回不同的**SMILES分子**表示
+
+```python
+s1_decoder=sf.decoder(s1)
+s2_decoder=sf.decoder(s2)
+print(s1_decoder)
+print(s2_decoder)
+```
+
+![image-20220215113831339](assess/image-20220215113831339.png)
+
+Chem.CanonSmiles()可以将SMILES分子表示成标准形式
+
+```python
+con_s1=Chem.CanonSmiles(s1_decoder)
+con_s2=Chem.CanonSmiles(s2_decoder)
+print(con_s1==con_s2)
+>>>True
+```
+
+len_selfies()
+---
+
+> 返回selfies符号的长度
+
+```python
+selfies.len_selfies('[C][O][C]')
+>>3
+```
+
+split_selfies()
+---
+
+> 将SELFIES分子分离为token形式
+
+```python
+smiles = "CN1C(=O)C2=C(c3cc4c(s3)-c3sc(-c5ncc(C#N)s5)cc3C43OCCO3)N(C)C(=O)C2=C1c1cc2c(s1)-c1sc(-c3ncc(C#N)s3)cc1C21OCCO1"
+s=sf.encoder(smiles)
+l=list(sf.split_selfies(s))
+print(l)
+print(set(l)) #对token出重
+```
+
+![image-20220215114447033](assess/image-20220215114447033.png)
+
+get_alphabet_from_selfies()
+---
+
+> 从SELFIES**分子list**中分离出token，返回是一个集合，**并出重**
+
+```python
+smiles1="CC(NCc1cccnc1)C(=O)NCC1CCCC1"
+smiles2="CC(=NO)N(Cc1ccccc1)c1ccc(S(=O)(=O)N2CCNC(=O)C2)cc1"
+s1=sf.encoder(smiles1)
+s2=sf.encoder(smiles2)
+l=[]
+l.append(s1)
+l.append(s2)
+print(l)
+smi=sf.get_alphabet_from_selfies(l)
+print(smi)
+sorted(list(smi)) #集合转变为排序的list
+```
+
+![image-20220215134639209](assess/image-20220215134639209.png)
+
+get_semantic_robust_alphabet()
+---
+
+> 返回所有受语义约束的**符号的子集**
+
+```python
+s=sf.get_semantic_robust_alphabet()
+print(s)
+```
+
+![image-20220215143142525](assess/image-20220215143142525.png)
+
+get_preset_constraints()
+---
+
+> get_preset_constraints(name)，根据name返回不同的dict
+
+![image-20220218184940752](assess/image-20220218184940752.png)
+
+get_semantic_constraints()
+---
+
+> 返回原子符号对应的化合价
+
+```python
+s=sf.get_semantic_constraints()
+print(s)
+```
+
+![image-20220215143440556](assess/image-20220215143440556.png)
+
+'B-1':表示B的标准化合价减一
+
+'B+1':表示B的标准化合价加1
+
+ '?':表示其它的原子，化合价都定义为8
+
+默认约束对于违反它们的 SMILES 是不够的。例如，<u>硝基苯具有具有6键的氮</u>，而<u>氯酸盐阴离子具有具有具有5键的氯</u> - **这些SMILES在默认约束下不能表示为自拍**。
+
+set_semantic_constraints()
+---
+
+> 自定义配置语义约束
+>
+> `set_semantic_constraints(bond_constraints='default)`
+
+```python
+bond_constraints=sf.get_semantic_constraints()
+print(bond_constraints)
+bond_constraints['I'] = 2 #修改'I'原子的化合价
+sf.set_semantic_constraints(bond_constraints)
+s=sf.get_semantic_constraints()
+print(s)
+```
+
+![image-20220215145431240](assess/image-20220215145431240.png)
+
+恢复默认约束
+
+```python
+sf.set_semantic_constraints()
+```
+
+不同的参数对应的约束不同
+
+![image-20220218184940752](assess/image-20220218184940752.png)
+
+```python
+def smiles(x):
+    x = x.strip()
+    try:
+        smi=sf.encoder(x)
+    except:
+        sf.set_semantic_constraints()#默认
+        smi = sf.encoder(x)
+        sf.set_semantic_constraints('hypervalent')
+        return smi
+    return smi
+```
+
+selfies_to_encoding()
+---
+
+> `selfies_to_encoding(selfies, vocab_stoi,pad_to_len=- 1, enc_type='both')`将一个selfies字符串转换为它的标签(整数)或一个热编码。
+
+ *vocab_stoi*: dict{str,int}一个将自拍照符号映射到索引的字典，索引必须是非负且连续，从0开始。如果要填充自拍照字符串，那么特殊填充符号[nop]也必须是该字典中的一个键。
+
+*pad_to_len*:SELFIES 字符串填充到的长度。如果此值小于或等于 SELFIES 字符串的符号长度，则不添加填充。默认为 -1。
+
+*enc_type*:输出的编码类型。'both'，'one_hot','label'
+
+'both':然后返回一组标签和一个热编码
+
+'one_hot':只返回one-hot编码
+
+'label'：只返回标签
+
+```python
+s1=sf.selfies_to_encoding("[C][F]", {"[C]": 0, "[F]": 1},enc_type='one_hot')
+s2=sf.selfies_to_encoding("[C][F]", {"[C]": 0, "[F]": 1},enc_type='label')
+s3=sf.selfies_to_encoding("[C][F]", {"[C]": 0, "[F]": 1},enc_type='both')
+print(s1)
+print(s2)
+print(s3)
+```
+
+![image-20220218191944575](assess/image-20220218191944575.png)
+
+encoding_to_selfies()
+---
+
+> encoding_to_selfies(encoding, vocab_itos, enc_type)
+>
+> 将标签(整数)或一热编码转换为selfies字符串。
+
+```python
+import selfies as sf
+one_hot = [[0, 1, 0], [0, 0, 1], [1, 0, 0]]
+label=[0,1,2]
+vocab_itos = {0: "[nop]", 1: "[C]", 2: "[F]"}
+s1=sf.encoding_to_selfies(one_hot, vocab_itos, enc_type="one_hot")
+s2=sf.encoding_to_selfies(label, vocab_itos, enc_type="label")
+s1,s2
+>>>
+('[C][F][nop]', '[nop][C][F]')
+```
+
+batch_selfies_to_flat_hot()
+---
+
+> batch_selfies_to_flat_hot(selfies_batch, vocab_stoi, pad_to_len=- 1)
+>
+> 将 SELFIES 字符串列表转换为其扁平的一热编码列表。
+
+```python
+import selfies as sf
+batch = ["[C]", "[C][C]"]
+vocab_stoi = {"[nop]": 0, "[C]": 1}
+sf.batch_selfies_to_flat_hot(batch, vocab_stoi, 2)
+>>>[[0, 1, 1, 0], [0, 1, 0, 1]]
+```
+
+batch_flat_hot_to_selfies()
+---
+
+> batch_flat_hot_to_selfies(one_hot_batch, vocab_itos)
+>
+> 将one-hot编码转变成selfies
+
+```python
+import selfies as sf
+batch = [[0, 1, 1, 0], [0, 1, 0, 1]]
+vocab_itos = {0: "[nop]", 1: "[C]"}
+sf.batch_flat_hot_to_selfies(batch, vocab_itos)
+>>>['[C][nop]', '[C][C]']
+```
+
+
+
+比较原始和解码的微笑
+---
+
+```python
+#不要使用'==',先转变成标准分子表示再进行比较
+print(f"== Equals: {smiles == decoded_smiles}")
+# Recomended
+can_smiles = Chem.CanonSmiles(smiles)
+can_decoded_smiles = Chem.CanonSmiles(decoded_smiles)
+print(f"RDKit Equals: {can_smiles == can_decoded_smiles}")
+```
+
+<img src="assess/image-20220215154155709.png" alt="image-20220215154155709" style="zoom:150%;" />
 
 
 
 
 
+SELFIES分子表示是如何确保分子100%有效
+---
 
+```python
+#正确的分子表示
+smiles1="CC(NCc1cccnc1)C(=O)NCC1CCCC1"
+s1=sf.encoder(smiles1)
+print(s1)
+Chem.MolFromSmiles(smiles1)
+```
+
+![image-20220215152136036](assess/image-20220215152136036.png)
+
+```python
+error="[C][C][O][N][C][C][=C][C][=C][=C][Ring1][=Branch1][C][=Branch1][C][=O][N][C][C][C][C][C][C][Ring1][Branch1]" #剔除几个selfies字符
+error_decoder=sf.decoder(error)
+correct=Chem.CanonSmiles(error_decoder) #即使是错误的selfies分子表示，依然能返回正确的SMILES分子表示
+print(correct)
+Chem.MolFromSmiles(correct)
+```
+
+![image-20220215152152244](assess/image-20220215152152244.png)
+
+添加自定义token，并使用split_selfies()拆分token
+---
+
+```python
+#添加填充token
+alphabet = sf.get_semantic_robust_alphabet()
+alphabet.add('[nop]')
+#s='[C][N][C][=Branch1][C][=O][C][=C][Branch2][Ring2][#Branch1][C][=C][C][=C][Branch1][Ring2][S][Ring1][Branch1][C][S][C][Branch1][N][C][=N][C][=C][Branch1][Ring1][C][#N][S][Ring1][#Branch1][=C][C][=Ring1][N][C][Ring1][S][O][C][C][O][Ring1][Branch1][N][Branch1][C][C][C][=Branch1][C][=O][C][Ring2][Ring1][=N][=C][Ring2][Ring1][P][C][=C][C][=C][Branch1][Ring2][S][Ring1][Branch1][C][S][C][Branch1][N][C][=N][C][=C][Branch1][Ring1][C][#N][S][Ring1][#Branch1][=C][C][=Ring1][N][C][Ring1][S][O][C][C][O][Ring1][Branch1][nop][nop]'
+print(list(sf.split_selfies(s)))
+```
+
+![image-20220218184254894](assess/image-20220218184254894.png)
+
+如果没有`alphabet.add('[nop]')`则会报错
+
+![image-20220218184505495](assess/image-20220218184505495.png)
+
+random
+===
+
+uniform()
+---
+
+> uniform(low, high)，返回low与high之间一个随机数
+
+```
+import random
+random.uniform(5, 10)
+>>>6.98774810047
+```
+
+加权随机抽样
+---
+
+```python
+import random
+def random_weight(weight_data):
+    total = sum(weight_data.values())  # 权重求和
+    ra = random.uniform(0, total)  # 在0与权重和之前获取一个随机数 
+    curr_sum = 0
+    ret = None
+    keys = weight_data.keys()    # 使用Python3.x中的keys
+    for k in keys:
+        curr_sum += weight_data[k]       # 在遍历中，累加当前权重值
+        if ra <= curr_sum:     # 当随机数<=当前权重和时，返回权重key
+            ret = k
+            break
+    return ret
+
+dic_token={'[F]': 2, '[N]': 2, '[N+]': 1, '[C]': 3}
+for i in range(10):
+    print(random_weight(dic_token),end=' ')
+>>>[N+] [N+] [N] [N] [C] [C] [N] [N+] [F] [N+]    
+```
+
+
+
+choice()
+---
+
+> 从列表中随机抽取一个值
+
+```python
+tok=['[C]','[N]','[C]','[C]','[F]','[N+]','[F]','[N]']
+for i in range(10):
+    print(random.choice(tok),end=' ')
+```
+
+![image-20220219164311747](assess/image-20220219164311747.png)
 
 Python方法
 ===
@@ -2012,6 +3386,29 @@ fun_args(**mykwargs)
 #arg3: None
 ```
 
+print()
+---
+
+> `print(objects, sep=' ', end='\n', file=sys.stdout)`
+
+- objects --表示输出的对象。输出多个对象时，需要用 , （逗号）分隔。
+- sep -- 用来间隔多个对象。
+- end -- 用来设定以什么结尾。默认值是换行符 \n，我们可以换成其他字符。
+- file -- 要写入的文件对象。
+
+将print()的输出存入指定的文件中
+
+```python
+import sys
+sys.stdout = open('recode.log', mode = 'w',encoding='utf-8')
+for i in range(10):
+    print("sdjlahjljag")
+```
+
+```python
+print("sdjlahjljag",file='recode.log')
+```
+
 
 
 hasattr()
@@ -2040,7 +3437,7 @@ aList.extend(bList)
 enumerate()
 ---
 
-> enumerate在字典上是枚举、列举z
+> Python中的内置函数，enumerate()在字典上是枚举、列举
 
 enumerate参数为可遍历/可迭代的对象(如列表、字符串)
 
@@ -2054,7 +3451,35 @@ for index,value in enumerate(lst):
     3,4
     4,5
     5,6
+
+###第二个参数用于指定索引起始值
+list1 = ["这", "是", "一个", "测试"]
+for index, item in enumerate(list1, 1):
+    print index, item
+>>>
+1 这
+2 是
+3 一个
+4 测试    
 ```
+
+与DataLoader配合使用
+
+```python
+ loader = DataLoader(data, shuffle=True, pin_memory=True,
+                                batch_size=config.batch_size,
+                                num_workers=config.num_workers)
+"""
+data为DataLoader中Dataset类中__getitem__()返回的数据
+如果__getitem__()中
+return  x, y, prop, sca_tensor
+"""
+for idx,data in enumerate(loader):
+  x, y, prop, sca_tensor=data
+ 		
+```
+
+
 
 isinstance()
 ---
@@ -2151,6 +3576,21 @@ strip()
 
 ```python
 str.strip([chars]);
+```
+
+tolist()
+---
+
+> 用于将数组或矩阵转换成列表
+
+```python
+import numpy as np
+a = np.ones(5)  # array([1., 1., 1., 1., 1.])
+a.tolist()  # [1.0, 1.0, 1.0, 1.0, 1.0]
+b = [[1, 2, 3], [0, 9, 8, 0]]
+c = np.mat(b)  # matrix([[list([1, 2, 3]), list([0, 9, 8, 0])]])
+c.tolist()  # [[1, 2, 3], [0, 9, 8, 0]]
+
 ```
 
 
@@ -2379,13 +3819,18 @@ list操作
 ```python
 l1=[1,2,3,4,5,6]
 l2=[1,2,3,4,5,6]
-l3=l1+l2
+l3=l1+l2 #list列表拼接
 l3
 ```
 
 ![image-20220202110203013](assess/image-20220202110203013.png)
 
+```python
+l=list(range(6))
+l
+```
 
+![image-20220205202521873](assess/image-20220205202521873.png)
 
 PyG框架
 ===
@@ -2829,3 +4274,12 @@ class MyLoss(torch.nn.Moudle):
         return loss
 ```
 
+合并CSV文件
+===
+
+- 将所有的csv文件放到一个文件夹，位置任意。
+- 打开cmd，切换到存放csv的文件夹，也可以在csv文件夹中，按住shift加鼠标右键，选择在此处打开命令窗口。
+- 输入copy *.csv zong.csv，zong的名字，可以任意。然后按enter，等待完成就可以了。
+- 打开csv文件夹就可以看到zong.csv
+
+缺点是需要手动删除第二个文件中的表头
