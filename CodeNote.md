@@ -4283,3 +4283,54 @@ class MyLoss(torch.nn.Moudle):
 - 打开csv文件夹就可以看到zong.csv
 
 缺点是需要手动删除第二个文件中的表头
+
+Django框架
+===
+
+```
+#初始化数据库，会创建默认应用使用的数据库表，前提是要在本机先建立数据库
+python manage.py migrate 
+
+#安装 genui 扩展模块
+python manage.py genuisetup 
+
+#运行开发服务器
+python manage.py runserver 默认8000端口，本地地址
+
+python manage.py runserver 8080 更改端口启动服务
+
+python manage.py runserver 0.0.0.0:8080 启动远程服务访问
+```
+
+Django框架中创建应用
+---
+
+一个项目中可以创建很多应用
+
+```
+#进入到项目文件中
+python manage.py start myapp 
+```
+
+<img src="assess/image-20220305155941096.png" alt="image-20220305155941096" style="zoom:80%;" />
+
+
+
+连接数据库
+---
+
+如果不使用Django中的内置数据库SQLite,则需要额外的设置如
+
+不同的数据库需要不同的驱动
+
+
+
+创建管理站点的超级用户
+---
+
+![image-20220305160014502](assess/image-20220305160014502.png)
+
+```
+python manage.py creatsuperuser
+```
+
