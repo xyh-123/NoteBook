@@ -163,7 +163,7 @@ torch.Tensor
 
 ![img](assess/e7e538471a8396fcb99cb72bc230223e.JPEG)
 
-![图片](CodeNote.assets/640.webp)
+![图片](assess/640.webp)
 
 - dtype：张量的数据类型，如 torch.FloatTensor，torch.cuda.FloatTensor，用的最多的一般是 float32 和 int64(torch.long)
 - shape：张量的形状，如 (64, 3, 224, 224)
@@ -258,13 +258,13 @@ torch.add(b, w, x)
 
 > torch.addcdiv(input, value=1, tensor1, tensor2, out=None)
 
-![image-20211118135815882](CodeNote.assets/image-20211118135815882.png)
+![image-20211118135815882](assess/image-20211118135815882.png)
 
 torch.addcmul()
 
 > torch.addcmul(input, value=1, tensor1, tensor2, out=None)
 
-![image-20211118135913913](CodeNote.assets/image-20211118135913913.png)
+![image-20211118135913913](assess/image-20211118135913913.png)
 
 ### 张量操作
 
@@ -437,7 +437,7 @@ print(id(a), a)   # 2112218352520 tensor([2.])
 
 > 3.依赖于叶子节点的节点，requires_grad 默认为 True
 
-![图片](CodeNote.assets/640-16372221161522.webp)
+![图片](assess/640-16372221161522.webp)
 
 依赖于叶子节点的节点，在上面图中w,x是叶子节点，而依赖于叶子节点的节点，其实这里说的就是 a,b， 也就是 a，b 默认就是需要计算梯度的。这个也好理解，因为计算 w,x 的梯度的时候是需要先对 a, b 进行求导的，要用到 a, b 的梯度，所以这里直接默认 a, b 是需要计算梯度的。
 
@@ -478,7 +478,7 @@ torch.zeros(3, 5).scatter_(0, torch.tensor([[0, 1, 2, 0, 0], [2, 0, 0, 1, 2]]), 
 #        [0.2078, 0.0000, 0.8184, 0.0000, 0.0266]])
 ```
 
-![img](CodeNote.assets/1782235-20191126211337086-1783407744.png)
+![img](assess/1782235-20191126211337086-1783407744.png)
 
 #### torch.squeeze()
 
@@ -972,7 +972,7 @@ model(data)
 
 Softmax函数定义如下：
 
-![img](CodeNote.assets/1446032-20190409103827224-1240655551.png)
+![img](assess/1446032-20190409103827224-1240655551.png)
 
 dim:指明维度，dim=0表示按列计算；dim=1表示按行计算；dim=-1,表示按照输入的最后一维。
 
@@ -1919,7 +1919,7 @@ with open(save_file, "wb") as f:
 scipy
 ===
 
-![image-20211117231025564](CodeNote.assets/image-20211117231025564.png)
+![image-20211117231025564](assess/image-20211117231025564.png)
 
 scipy.sparse(sp)
 ---
@@ -3386,6 +3386,24 @@ fun_args(**mykwargs)
 #arg3: None
 ```
 
+（**dict）
+---
+
+> 字典类型前面加两个**,表示将字典变成关键字的形式
+
+```
+#两者等价
+MolSetFile.create( **{molset='molset',filename='file'，file='file'})
+
+MolSetFile.create(
+            molset='molset',
+            filename=v'file'
+            file='file',
+        )
+```
+
+
+
 print()
 ---
 
@@ -3600,9 +3618,9 @@ c.tolist()  # [[1, 2, 3], [0, 9, 8, 0]]
 
 **数组名[首:尾:`步长`,首:尾:`步长`]**
 
-![img](CodeNote.assets/70.png)
+![img](assess/70.png)
 
-![img](CodeNote.assets/70-16383259521432.png)![img](CodeNote.assets/70-16383259873424.png)
+![img](assess/70-16383259521432.png)![img](assess/70-16383259873424.png)
 
 ```python
 #数组中全部元素
@@ -3867,7 +3885,7 @@ data
 
 `num_edges：`图中边的个数,`num_edge_features`图中边特征向量的维度
 
-![img](CodeNote.assets/v2-8999fad415dad3671a564dd100316fe2_1440w.jpg)
+![img](assess/v2-8999fad415dad3671a564dd100316fe2_1440w.jpg)
 
 ```python
 import torch
@@ -3974,7 +3992,7 @@ Mini-batches操作
 
 PyG通过创建一个稀疏的块对角矩阵来实现并行化操作，并在节点的维度将节点特征矩阵和target矩阵连接起来。这种方式使得比较容易地在不同的batch中进行操作
 
-![image-20211120161046234](CodeNote.assets/image-20211120161046234.png)
+![image-20211120161046234](assess/image-20211120161046234.png)
 
 ```python
 from torch_geometric.loader import DataLoader
@@ -4010,11 +4028,11 @@ for batch in loader:
 - `y`：graph标签
 - `batch`：列向量，用于指示每个节点属于batch中的第几个graph
 
-![image-20211120173412680](CodeNote.assets/image-20211120173412680.png)
+![image-20211120173412680](assess/image-20211120173412680.png)
 
 > 我们可以用这个向量实现对每个graph的节点特征求平均
 
-![img](CodeNote.assets/v2-e012203e229b73bde29abdcf1dcf91f0_1440w.jpg)
+![img](assess/v2-e012203e229b73bde29abdcf1dcf91f0_1440w.jpg)
 
 
 
@@ -4178,7 +4196,7 @@ print('Accuracy:{:.4f}'.format(acc))
 
 > 机器学习模型训练的步骤
 
-![图片](CodeNote.assets/640-16372223758944.webp)
+![图片](assess/640-16372223758944.webp)
 
 1. 数据模块（数据采集，清洗，处理等）
 2. 建立模型（各种模型的建立）
@@ -4195,7 +4213,7 @@ print('Accuracy:{:.4f}'.format(acc))
 
 假设求解y = W × x + b
 
-![image-20211118142734116](CodeNote.assets/image-20211118142734116.png)
+![image-20211118142734116](assess/image-20211118142734116.png)
 
 ```python
 # 首先我们得有训练样本X，Y， 这里我们随机生成
@@ -4232,13 +4250,13 @@ print(loss)
 
 > 逻辑回归模型是**「线性」**的**「二分类」**模型，模型的表达式如下：
 
-![image-20211118161050081](CodeNote.assets/image-20211118161050081.png)
+![image-20211118161050081](assess/image-20211118161050081.png)
 
 f(x)为sigmoid函数
 
 > 关于线性和非线性模型的区别
 
-![图片](CodeNote.assets/640-16372231603328.webp)
+![图片](assess/640-16372231603328.webp)
 
 
 
